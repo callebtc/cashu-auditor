@@ -91,23 +91,41 @@ export default defineComponent({
         .attr('viewBox', `-250 -200 800 550`)
         .attr('preserveAspectRatio', 'xMidYMid meet');
 
-        const tooltip = d3.select(tooltipRef.value);
+      // Define arrowhead markers
+      svg.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '-0 -5 10 10')
+        .attr('refX', 25) // Adjust based on link distance
+        .attr('refY', 0)
+        .attr('orient', 'auto')
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('xoverflow', 'visible')
+        .append('svg:path')
+        .attr('d', 'M 0,-5 L 10,0 L 0,5') // Arrow shape
+        .attr('fill', '#aaa')
+        .style('stroke', 'none');
 
-        simulation = d3.forceSimulation<GraphNode, GraphLink>(nodes)
-        .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id.toString()).distance(250))
-        .force('charge', d3.forceManyBody().strength(-100)) // Reduce repulsion to keep nodes closer
+      const tooltip = d3.select(tooltipRef.value);
+
+      simulation = d3.forceSimulation<GraphNode, GraphLink>(nodes)
+        .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id.toString()).distance(300))
+        .force('charge', d3.forceManyBody().strength(-200)) // Adjusted for better clustering
         .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('x', d3.forceX(width / 2).strength(0.01)) // Additional force pulling nodes to the x center
-        .force('y', d3.forceY(height / 2).strength(0.01)) // Additional force pulling nodes to the y center
+        .force('x', d3.forceX(width / 2).strength(0.01))
+        .force('y', d3.forceY(height / 2).strength(0.1))
         .on('tick', ticked);
 
       const link = svg.append('g')
         .attr('class', 'links')
-        .selectAll('line')
+        .selectAll('path')
         .data(links)
-        .enter().append('line')
+        .enter().append('path')
         .attr('stroke-width', (d) => Math.sqrt(d.count))
         .attr('stroke', (d) => d.state === 'OK' ? '#7b7' : '#a66')
+        .attr('stroke-opacity', 0.5)
+        .attr('fill', 'none')
+        .attr('marker-end', 'url(#arrowhead)') // Attach the marker to the end of the path
         // Tooltip events for edges
         .on('mouseover', (event, d) => {
           tooltip
@@ -116,13 +134,12 @@ export default defineComponent({
         })
         .on('mousemove', (event) => {
           tooltip
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY - 28}px`);
+            .style('left', `${event.clientX + 10}px`)
+            .style('top', `${event.clientY - 28}px`);
         })
         .on('mouseout', () => {
           tooltip.style('opacity', 0);
         });
-
 
       const node = svg.append('g')
         .attr('class', 'nodes')
@@ -131,6 +148,7 @@ export default defineComponent({
         .enter().append('circle')
         .attr('r', 10)
         .attr('fill', (d) => d.state === 'OK' ? 'green' : 'red')
+        .attr('stroke', '#000')
         .call(drag(simulation))
         // Tooltip events for nodes
         .on('mouseover', (event, d) => {
@@ -140,8 +158,8 @@ export default defineComponent({
         })
         .on('mousemove', (event) => {
           tooltip
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY - 28}px`);
+            .style('left', `${event.clientX + 10}px`)
+            .style('top', `${event.clientY - 28}px`);
         })
         .on('mouseout', () => {
           tooltip.style('opacity', 0);
@@ -158,14 +176,18 @@ export default defineComponent({
         .attr('dx', 20)
         .attr('dy', '.45em')
         .text((d) => d.name || d.url || '')
-        .attr('fill', '#fff');
+        .attr('fill', '#fff')
+        .style('font-weight', 'bold');
 
       function ticked() {
-        link
-          .attr('x1', (d) => (d.source as GraphNode).x!)
-          .attr('y1', (d) => (d.source as GraphNode).y!)
-          .attr('x2', (d) => (d.target as GraphNode).x!)
-          .attr('y2', (d) => (d.target as GraphNode).y!);
+        link.attr('d', (d) => {
+          const source = d.source as GraphNode;
+          const target = d.target as GraphNode;
+          const dx = target.x! - source.x!;
+          const dy = target.y! - source.y!;
+          const dr = Math.sqrt(dx * dx + dy * dy);
+          return `M${source.x},${source.y} A${dr},${dr} 0 0,1 ${target.x},${target.y}`;
+        });
 
         node
           .attr('cx', (d) => d.x!)
@@ -219,7 +241,7 @@ export default defineComponent({
 
     return {
       svgRef,
-      tooltipRef,
+      tooltipRef, // Return tooltipRef here
       loading,
       error,
     };
@@ -244,7 +266,7 @@ svg {
   stroke-width: 1.5px;
 }
 
-.links line {
+.links path {
   stroke-opacity: 0.6;
 }
 
@@ -261,5 +283,6 @@ svg {
   border-radius: 3px;
   pointer-events: none;
   font-size: 12px;
+  z-index: 10; /* Ensure tooltip is on top */
 }
 </style>
