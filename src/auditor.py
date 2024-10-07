@@ -156,7 +156,11 @@ class Auditor:
         async with AsyncSession(engine) as session:
             result = await session.execute(select(Mint))
             mints = result.scalars().all()
-            mints = [mint for mint in mints if mint.state == MintState.OK.value]
+            mints = [
+                mint
+                for mint in mints
+                if mint.state == MintState.OK.value or mint.n_melts > 0
+            ]
             mint = max(
                 mints,
                 key=lambda mint: (mint.sum_donations - mint.balance)
