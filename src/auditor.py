@@ -205,8 +205,11 @@ class Auditor:
             ]
             mint = max(
                 mints,
-                key=lambda mint: (mint.sum_donations - mint.balance)
-                / mint.sum_donations,
+                key=lambda mint: (
+                    (mint.sum_donations - mint.balance) / mint.sum_donations
+                    if mint.sum_donations > 0 and mint.balance > 0
+                    else 0
+                ),
             )
             return mint
 
