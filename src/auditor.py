@@ -1,5 +1,6 @@
 import asyncio
 import time
+from tkinter import E
 import bolt11
 import random
 from cashu.wallet.wallet import Wallet
@@ -333,7 +334,7 @@ class Auditor:
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
-                this_error = False
+                this_error = await self.recover_errors(from_wallet, e)
                 # still try to mint in case of an error
                 try:
                     logger.info("Trying to mint although melt failed.")
@@ -350,7 +351,7 @@ class Auditor:
                     await from_wallet.set_reserved(send_proofs, reserved=False)
                     if this_error:
                         logger.info("Not storing this event as a failure.")
-                        raise e
+                        raise Exception("Error melting and minting.")
                     await self.bump_mint_errors(from_mint)
                     await self.store_swap_event(
                         from_mint,
