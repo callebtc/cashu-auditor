@@ -1,6 +1,5 @@
 import asyncio
 import time
-from tkinter import E
 import bolt11
 import random
 from cashu.wallet.wallet import Wallet
