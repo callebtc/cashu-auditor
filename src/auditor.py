@@ -331,6 +331,8 @@ class Auditor:
 
                 # still try to mint in case of an error
                 try:
+                    logger.info("Trying to mint although melt failed.")
+                    await asyncio.sleep(5)
                     proofs = await to_wallet.mint(amount, invoice.id)
                     await self.bump_mint_n_mints(to_mint)
                     mint_worked = True
@@ -358,10 +360,10 @@ class Auditor:
                 else:
                     pass
 
-            await asyncio.sleep(5)
-
             if not mint_worked:
                 try:
+                    logger.info("Minting after melt succeed.")
+                    await asyncio.sleep(5)
                     proofs = await to_wallet.mint(amount, invoice.id)
                     await self.bump_mint_n_mints(to_mint)
                 except Exception as e:
