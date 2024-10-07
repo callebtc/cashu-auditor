@@ -67,7 +67,7 @@ class Auditor:
             )
             # TODO: Filter invoices per mint!!!
             for mint_quote in mint_quotes:
-                time.sleep(10)
+                await asyncio.sleep(10)
                 invoice = bolt11.decode(mint_quote.bolt11)
                 if (
                     mint_quote.amount < 0
