@@ -313,6 +313,7 @@ class Auditor:
                 this_error = await self.recover_errors(from_wallet, e)
                 raise e
 
+            mint_worked = False
             try:
                 time_start = time.time()
                 melt_response = await from_wallet.melt(
@@ -327,31 +328,46 @@ class Auditor:
                 await self.bump_mint_n_melts(from_mint)
             except Exception as e:
                 logger.error(f"Error melting: {e}")
-                await from_wallet.set_reserved(send_proofs, reserved=False)
-                this_error = await self.recover_errors(from_wallet, e)
-                if this_error:
-                    logger.info("Not storing this event as a failure.")
+
+                # still try to mint in case of an error
+                try:
+                    proofs = await to_wallet.mint(amount, invoice.id)
+                    await self.bump_mint_n_mints(to_mint)
+                    mint_worked = True
+                except Exception as e:
+                    logger.error(f"Error minting: {e}")
+                    pass
+
+                if not mint_worked:
+                    await from_wallet.set_reserved(send_proofs, reserved=False)
+                    this_error = await self.recover_errors(from_wallet, e)
+                    if this_error:
+                        logger.info("Not storing this event as a failure.")
+                        raise e
+                    await self.bump_mint_errors(from_mint)
+                    await self.store_swap_event(
+                        from_mint,
+                        to_mint,
+                        amount,
+                        0,
+                        0,
+                        "ERROR",
+                    )
+
                     raise e
-                await self.bump_mint_errors(from_mint)
-                await self.store_swap_event(
-                    from_mint,
-                    to_mint,
-                    amount,
-                    0,
-                    0,
-                    "ERROR",
-                )
-                raise e
+                else:
+                    pass
 
             await asyncio.sleep(5)
 
-            try:
-                proofs = await to_wallet.mint(amount, invoice.id)
-                await self.bump_mint_n_mints(to_mint)
-            except Exception as e:
-                logger.error(f"Error minting: {e}")
-                await self.bump_mint_errors(to_mint)
-                raise e
+            if not mint_worked:
+                try:
+                    proofs = await to_wallet.mint(amount, invoice.id)
+                    await self.bump_mint_n_mints(to_mint)
+                except Exception as e:
+                    logger.error(f"Error minting: {e}")
+                    await self.bump_mint_errors(to_mint)
+                    raise e
 
             await self.update_mint_db(from_wallet)
             await self.update_mint_db(to_wallet)
