@@ -67,7 +67,6 @@ class Auditor:
             )
             # TODO: Filter invoices per mint!!!
             for mint_quote in mint_quotes:
-                await asyncio.sleep(10)
                 invoice = bolt11.decode(mint_quote.bolt11)
                 if (
                     mint_quote.amount < 0
@@ -76,6 +75,7 @@ class Auditor:
                 ):
                     continue
                 logger.info(f"Checking unpaid mint quote: {mint_quote}")
+                await asyncio.sleep(10)
                 try:
                     proofs = await wallet.mint(mint_quote.amount, mint_quote.id)
                     await self.bump_mint_n_mints(mint)
