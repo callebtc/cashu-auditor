@@ -73,7 +73,7 @@ export default defineComponent({
 
     const columns = [
       // { name: 'id', label: 'ID', field: 'id', sortable: true, align: 'left' },
-      { name: 'url', label: ']', field: 'url', sortable: true, align: 'left' },
+      { name: 'url', label: 'URL', field: 'url', sortable: true, align: 'left' },
       // { name: 'info', label: 'Info', field: 'info', sortable: true },
       { name: 'name', label: 'Name', field: 'name', sortable: true, align: 'left' },
       { name: 'balance', label: 'Balance (sat)', field: 'balance', sortable: true, align: 'left' },

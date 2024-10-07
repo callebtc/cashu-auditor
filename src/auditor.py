@@ -116,6 +116,7 @@ class Auditor:
         async with AsyncSession(engine) as session:
             mint_in_session = await session.merge(mint)
             mint_in_session.n_melts += 1
+            mint_in_session.state = MintState.OK.value
             await session.commit()
 
     async def update_balances_task(self):
