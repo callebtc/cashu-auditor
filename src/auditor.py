@@ -33,9 +33,9 @@ class Auditor:
 
         # await self.mint_outstanding()
 
-        await self.update_all_balances()
-        asyncio.create_task(self.update_balances_task())
-        asyncio.create_task(self.monitor_swap_task())
+        # await self.update_all_balances()
+        # asyncio.create_task(self.update_balances_task())
+        # asyncio.create_task(self.monitor_swap_task())
 
     async def monitor_swap_task(self):
         while True:

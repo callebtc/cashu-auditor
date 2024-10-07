@@ -17,7 +17,7 @@ bolt11 = "^2.1.0"
 cashu = {path = "contrib/nutshell"}
 
 [tool.poetry.scripts]
-auditor = "auditor.main:app"
+auditor = "src.main:app"
 
 [build-system]
 requires = ["poetry-core"]

@@ -31,3 +31,18 @@ export interface SwapEventRead {
 export interface ChargeRequest {
   token: string;
 }
+
+export interface MintGraphEdge {
+  from_id: number;
+  to_id: number;
+  count: number;
+  total_amount: number;
+  total_fee: number;
+  last_swap: string;
+  state: string;
+}
+
+export interface MintGraph {
+  nodes: MintRead[];
+  edges: MintGraphEdge[];
+}

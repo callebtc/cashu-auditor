@@ -48,3 +48,18 @@ class SwapEventRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class MintGraphEdge(BaseModel):
+    from_id: int
+    to_id: int
+    count: int
+    total_amount: int
+    total_fee: int
+    last_swap: datetime
+    state: MintState
+
+
+class MintGraph(BaseModel):
+    nodes: list[MintRead]
+    edges: list[MintGraphEdge]

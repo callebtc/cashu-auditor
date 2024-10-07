@@ -8,7 +8,7 @@ from cashu.wallet.helpers import deserialize_token_from_string
 from cashu.core.base import Token
 from fastapi import Depends, FastAPI, HTTPException, status
 from loguru import logger
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, asc
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -148,3 +148,41 @@ async def read_swaps(
     )
     swaps = result.scalars().all()
     return swaps
+
+
+@app.get("/graph/", response_model=schemas.MintGraph)
+async def read_mint_graph(db: AsyncSession = Depends(get_db)):
+    """
+    Endpoint to retrieve a graph of all Mints and Swaps.
+    """
+    result = await db.execute(select(models.Mint))
+    mints = result.scalars().all()
+    mints = [schemas.MintRead.from_orm(mint) for mint in mints]
+    for mint in mints:
+        mint.info = ""
+    result = await db.execute(
+        select(models.SwapEvent).order_by(asc(models.SwapEvent.created_at))
+    )
+    swaps = result.scalars().all()
+    # reduce all swaps to edges with unique from_id, to_id pairs and aggregated total_amount, total_fee, and count
+    edges = {}
+    for swap in swaps:
+        key = (swap.from_id, swap.to_id)
+        if key in edges:
+            edges[key]["count"] += 1
+            edges[key]["total_amount"] += swap.amount
+            edges[key]["total_fee"] += swap.fee
+            edges[key]["last_swap"] = max(edges[key]["last_swap"], swap.created_at)
+            edges[key]["state"] = schemas.MintState(swap.state)
+        else:
+            edges[key] = {
+                "from_id": swap.from_id,
+                "to_id": swap.to_id,
+                "count": 1,
+                "total_amount": swap.amount,
+                "total_fee": swap.fee,
+                "last_swap": swap.created_at,
+                "state": schemas.MintState.OK,
+            }
+    edges_list = list(edges.values())
+    return schemas.MintGraph(nodes=mints, edges=edges_list)

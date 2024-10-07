@@ -1,5 +1,6 @@
 <template>
   <MintList />
+  <MintGraph />
   <SwapList />
 </template>
 
@@ -7,12 +8,14 @@
 import { defineComponent } from 'vue';
 import MintList from 'components/MintList.vue';
 import SwapList from 'components/SwapList.vue';
+import MintGraph from 'components/MintGraph.vue';
 
 export default defineComponent({
   name: 'IndexPage',
   components: {
     MintList,
     SwapList,
+    MintGraph,
   },
 });
 </script>
