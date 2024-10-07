@@ -3,7 +3,7 @@ import time
 import bolt11
 import random
 from cashu.wallet.wallet import Wallet
-from cashu.wallet.crud import get_lightning_invoices
+from cashu.wallet.crud import get_lightning_invoices, bump_secret_derivation
 from cashu.core.models import GetInfoResponse
 from cashu.wallet.helpers import receive, deserialize_token_from_string
 from loguru import logger
@@ -85,8 +85,10 @@ class Auditor:
 
     async def check_proofs(self, wallet: Wallet):
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
+        if len(reserved_proofs) == 0:
+            return
         logger.info(
-            f"Checking {len(reserved_proofs)} reserved proofs on mint {wallet.url}"
+            f"Checking {len(reserved_proofs)} of {len(wallet.proofs)} reserved proofs on mint {wallet.url}"
         )
         # invalidate proofs in batches
         try:
@@ -105,6 +107,17 @@ class Auditor:
         # bug: it doesn't update wallet.proofs
         for p in wallet.proofs:
             p.reserved = False
+
+    async def check_outputs_have_been_signed_error(
+        self, wallet: Wallet, e: Exception
+    ) -> bool:
+        if "outputs have already been signed before" in str(e):
+            logger.error(
+                "Outputs have already been signed before error. Bumping keyset counter."
+            )
+            await bump_secret_derivation(wallet.db, wallet.keyset_id, by=10)
+            return True
+        return False
 
     async def update_all_balances(self):
         async with AsyncSession(engine) as session:
@@ -283,9 +296,18 @@ class Auditor:
             balance_before_melt = from_wallet.available_balance
             total_amount = melt_quote.amount + melt_quote.fee_reserve
 
-            send_proofs, _ = await from_wallet.select_to_send(
-                from_wallet.proofs, total_amount, include_fees=True, set_reserved=True
-            )
+            try:
+                send_proofs, _ = await from_wallet.select_to_send(
+                    from_wallet.proofs,
+                    total_amount,
+                    include_fees=True,
+                    set_reserved=True,
+                )
+            except Exception as e:
+                this_error = await self.check_outputs_have_been_signed_error(
+                    from_wallet, e
+                )
+                raise e
 
             try:
                 time_start = time.time()
@@ -302,6 +324,12 @@ class Auditor:
             except Exception as e:
                 logger.error(f"Error melting: {e}")
                 await from_wallet.set_reserved(send_proofs, reserved=False)
+                this_error = await self.check_outputs_have_been_signed_error(
+                    from_wallet, e
+                )
+                if this_error:
+                    logger.info("Not storing this event as a failure.")
+                    raise e
                 await self.bump_mint_errors(from_mint)
                 await self.store_swap_event(
                     from_mint,
