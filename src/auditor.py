@@ -83,6 +83,23 @@ class Auditor:
                     logger.error(f"Error minting: {e}")
                     await self.bump_mint_errors(mint)
 
+    async def check_proofs(self, wallet: Wallet):
+        reserved_proofs = [p for p in wallet.proofs if p.reserved]
+        # invalidate proofs in batches
+        batch_size = 50
+        for _proofs in [
+            reserved_proofs[i : i + batch_size]
+            for i in range(0, len(reserved_proofs), batch_size)
+        ]:
+            logger.info(f"Checking and {len(_proofs)} proofs on mint {wallet.url}")
+            await wallet.invalidate(_proofs, check_spendable=True)
+
+        reserved_proofs = [p for p in wallet.proofs if p.reserved]
+        await wallet.set_reserved(reserved_proofs, reserved=False)
+        # bug: it doesn't update wallet.proofs
+        for p in reserved_proofs:
+            p.reserved = False
+
     async def update_all_balances(self):
         async with AsyncSession(engine) as session:
             result = await session.execute(select(Mint))
@@ -90,6 +107,7 @@ class Auditor:
             for mint in mints:
                 wallet = await Wallet.with_db(mint.url, ".")
                 await wallet.load_proofs()
+                await self.check_proofs(wallet)
                 mint.balance = wallet.available_balance
             await session.commit()
 
@@ -277,6 +295,7 @@ class Auditor:
                 await self.bump_mint_n_melts(from_mint)
             except Exception as e:
                 logger.error(f"Error melting: {e}")
+                await from_wallet.set_reserved(send_proofs, reserved=False)
                 await self.bump_mint_errors(from_mint)
                 await self.store_swap_event(
                     from_mint,
