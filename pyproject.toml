@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "auditor"
+version = "0.1.0"
+description = ""
+authors = ["callebtc <93376500+callebtc@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.0"
+sqlalchemy = "^2.0.35"
+aiosqlite = "^0.20.0"
+ruff = "^0.6.9"
+isort = "^5.13.2"
+bolt11 = "^2.1.0"
+cashu = {path = "contrib/nutshell"}
+
+[tool.poetry.scripts]
+auditor = "auditor.main:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
