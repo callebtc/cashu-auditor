@@ -82,7 +82,7 @@ class Auditor:
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
                     await self.recover_errors(wallet, e)
-                    await self.bump_mint_errors(mint)
+                    # await self.bump_mint_errors(mint)
 
     async def check_proofs(self, wallet: Wallet):
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
