@@ -86,13 +86,16 @@ class Auditor:
     async def check_proofs(self, wallet: Wallet):
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
         # invalidate proofs in batches
-        batch_size = 50
-        for _proofs in [
-            reserved_proofs[i : i + batch_size]
-            for i in range(0, len(reserved_proofs), batch_size)
-        ]:
-            logger.info(f"Checking and {len(_proofs)} proofs on mint {wallet.url}")
-            await wallet.invalidate(_proofs, check_spendable=True)
+        try:
+            batch_size = 50
+            for _proofs in [
+                reserved_proofs[i : i + batch_size]
+                for i in range(0, len(reserved_proofs), batch_size)
+            ]:
+                logger.info(f"Checking and {len(_proofs)} proofs on mint {wallet.url}")
+                await wallet.invalidate(_proofs, check_spendable=True)
+        except Exception as e:
+            logger.error(f"Error checking proofs: {e}")
 
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
         await wallet.set_reserved(reserved_proofs, reserved=False)
