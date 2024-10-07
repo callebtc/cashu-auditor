@@ -123,7 +123,7 @@ export default defineComponent({
 
     onMounted(() => {
       fetchMints();
-      intervalId = window.setInterval(fetchMints, 60_000); // Fetch every 10 seconds
+      intervalId = window.setInterval(fetchMints, 60_000);
     });
 
     onBeforeUnmount(() => {

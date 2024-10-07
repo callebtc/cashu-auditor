@@ -201,13 +201,19 @@ export default defineComponent({
         .on('end', dragended);
     };
 
+    let intervalId: number | undefined;
+
     onMounted(() => {
       fetchMintGraph();
+      intervalId = window.setInterval(fetchMintGraph, 60_000);
     });
 
     onBeforeUnmount(() => {
       if (simulation) {
         simulation.stop();
+      }
+      if (intervalId !== undefined) {
+        clearInterval(intervalId);
       }
     });
 
