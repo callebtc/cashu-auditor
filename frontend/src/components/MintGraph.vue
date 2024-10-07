@@ -83,12 +83,12 @@ export default defineComponent({
       d3.select(svgRef.value).selectAll('*').remove();
 
       const width = svgRef.value.clientWidth || 800;
-      const height = svgRef.value.clientHeight || 600;
+      const height = svgRef.value.clientHeight || 400;
 
       const svg = d3.select(svgRef.value)
         .attr('width', '100%')
         .attr('height', '100%')
-        .attr('viewBox', `-${width} -${height/4} ${width*3} ${height*2}`)
+        .attr('viewBox', `-250 -200 800 550`)
         .attr('preserveAspectRatio', 'xMidYMid meet');
 
         const tooltip = d3.select(tooltipRef.value);
