@@ -116,7 +116,7 @@ class Auditor:
             )
             await bump_secret_derivation(wallet.db, wallet.keyset_id, by=10)
             return True
-        if "already spent" in str(e):
+        if "already spent" in str(e) or "Proof already used" in str(e):
             logger.error("Token already spent error. Invalidating wallet proofs.")
             await wallet.invalidate(wallet.proofs, check_spendable=True)
             return True
@@ -331,6 +331,7 @@ class Auditor:
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
+                this_error = False
                 # still try to mint in case of an error
                 try:
                     logger.info("Trying to mint although melt failed.")
@@ -340,11 +341,11 @@ class Auditor:
                     mint_worked = True
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
+                    this_error = await self.recover_errors(from_wallet, e)
                     pass
 
                 if not mint_worked:
                     await from_wallet.set_reserved(send_proofs, reserved=False)
-                    this_error = await self.recover_errors(from_wallet, e)
                     if this_error:
                         logger.info("Not storing this event as a failure.")
                         raise e
