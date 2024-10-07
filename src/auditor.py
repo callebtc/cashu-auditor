@@ -31,11 +31,10 @@ class Auditor:
         await self.wallet.load_proofs()
         logger.info(f"Wallet initialized. Balance: {self.wallet.available_balance}")
 
-        # await self.mint_outstanding()
-
         await self.update_all_balances()
         asyncio.create_task(self.update_balances_task())
         asyncio.create_task(self.monitor_swap_task())
+        asyncio.create_task(self.mint_outstanding())
 
     async def monitor_swap_task(self):
         while True:
@@ -68,6 +67,7 @@ class Auditor:
             )
             # TODO: Filter invoices per mint!!!
             for mint_quote in mint_quotes:
+                time.sleep(10)
                 invoice = bolt11.decode(mint_quote.bolt11)
                 if (
                     mint_quote.amount < 0
