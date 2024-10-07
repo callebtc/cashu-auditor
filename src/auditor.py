@@ -110,7 +110,9 @@ class Auditor:
             p.reserved = False
 
     async def recover_errors(self, wallet: Wallet, e: Exception) -> bool:
-        if "outputs have already been signed before" in str(e):
+        if "outputs have already been signed before" in str(
+            e
+        ) or "secret already used" in str(e):
             logger.error(
                 "Outputs have already been signed before error. Bumping keyset counter."
             )
