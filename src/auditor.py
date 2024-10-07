@@ -117,6 +117,10 @@ class Auditor:
             )
             await bump_secret_derivation(wallet.db, wallet.keyset_id, by=10)
             return True
+        if "already spent" in str(e):
+            logger.error("Token already spent error. Invalidating wallet proofs.")
+            await wallet.invalidate(wallet.proofs, check_spendable=True)
+            return True
         return False
 
     async def update_all_balances(self):
