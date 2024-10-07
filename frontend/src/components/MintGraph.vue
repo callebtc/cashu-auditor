@@ -114,11 +114,16 @@ export default defineComponent({
       const tooltip = d3.select(tooltipRef.value);
 
       simulation = d3.forceSimulation<GraphNode, GraphLink>(nodes)
-        .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id.toString()).distance(300))
-        .force('charge', d3.forceManyBody().strength(-200)) // Adjusted for better clustering
+        // .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id.toString()).distance(300))
+          .force('link', d3.forceLink<GraphNode, GraphLink>(links)
+          .id((d) => d.id.toString())
+          .distance(250)
+          .strength((d) => Math.sqrt(d.count) / 100)
+        )
+        .force('charge', d3.forceManyBody().strength(-200))
         .force('center', d3.forceCenter(width / 2, height / 2))
         .force('x', d3.forceX(width / 2).strength(0.01))
-        .force('y', d3.forceY(height / 2).strength(0.1))
+        .force('y', d3.forceY(height / 2).strength(0.05))
         .on('tick', ticked);
 
       const link = svg.append('g')
