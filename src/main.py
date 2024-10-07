@@ -182,7 +182,7 @@ async def read_mint_graph(db: AsyncSession = Depends(get_db)):
                 "total_amount": swap.amount,
                 "total_fee": swap.fee,
                 "last_swap": swap.created_at,
-                "state": schemas.MintState.OK,
+                "state": schemas.MintState(swap.state),
             }
     edges_list = list(edges.values())
     return schemas.MintGraph(nodes=mints, edges=edges_list)
