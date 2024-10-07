@@ -324,10 +324,13 @@ class Auditor:
                 )
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
+                balance_after_melt = from_wallet.available_balance
                 await self.bump_mint_n_melts(from_mint)
             except Exception as e:
                 logger.error(f"Error melting: {e}")
-
+                time_taken_ms = (time.time() - time_start) * 1000
+                await from_wallet.load_proofs()
+                balance_after_melt = from_wallet.available_balance
                 # still try to mint in case of an error
                 try:
                     logger.info("Trying to mint although melt failed.")
@@ -372,7 +375,7 @@ class Auditor:
 
             await self.update_mint_db(from_wallet)
             await self.update_mint_db(to_wallet)
-            balance_after_melt = from_wallet.available_balance
+
             await self.store_swap_event(
                 from_mint,
                 to_mint,
