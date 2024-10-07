@@ -327,7 +327,6 @@ class Auditor:
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
-                await self.bump_mint_n_melts(from_mint)
             except Exception as e:
                 logger.error(f"Error melting: {e}")
                 time_taken_ms = (time.time() - time_start) * 1000
@@ -339,7 +338,6 @@ class Auditor:
                     logger.info("Trying to mint although melt failed.")
                     await asyncio.sleep(5)
                     proofs = await to_wallet.mint(amount, invoice.id)
-                    await self.bump_mint_n_mints(to_mint)
                     mint_worked = True
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
@@ -370,7 +368,6 @@ class Auditor:
                     logger.info("Minting after melt succeed.")
                     await asyncio.sleep(5)
                     proofs = await to_wallet.mint(amount, invoice.id)
-                    await self.bump_mint_n_mints(to_mint)
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
                     await self.bump_mint_errors(to_mint)
@@ -378,7 +375,8 @@ class Auditor:
 
             await self.update_mint_db(from_wallet)
             await self.update_mint_db(to_wallet)
-
+            await self.bump_mint_n_melts(from_mint)
+            await self.bump_mint_n_mints(to_mint)
             await self.store_swap_event(
                 from_mint,
                 to_mint,
