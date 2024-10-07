@@ -227,7 +227,7 @@ export default defineComponent({
 
     onMounted(() => {
       fetchMintGraph();
-      intervalId = window.setInterval(fetchMintGraph, 60_000);
+      // intervalId = window.setInterval(fetchMintGraph, 60_000);
     });
 
     onBeforeUnmount(() => {
