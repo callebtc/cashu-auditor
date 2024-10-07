@@ -100,7 +100,7 @@ class Auditor:
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
         await wallet.set_reserved(reserved_proofs, reserved=False)
         # bug: it doesn't update wallet.proofs
-        for p in reserved_proofs:
+        for p in wallet.proofs:
             p.reserved = False
 
     async def update_all_balances(self):
