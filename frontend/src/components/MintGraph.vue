@@ -95,7 +95,7 @@ export default defineComponent({
 
         simulation = d3.forceSimulation<GraphNode, GraphLink>(nodes)
         .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id.toString()).distance(250))
-        .force('charge', d3.forceManyBody().strength(-1000)) // Reduce repulsion to keep nodes closer
+        .force('charge', d3.forceManyBody().strength(-100)) // Reduce repulsion to keep nodes closer
         .force('center', d3.forceCenter(width / 2, height / 2))
         .force('x', d3.forceX(width / 2).strength(0.01)) // Additional force pulling nodes to the x center
         .force('y', d3.forceY(height / 2).strength(0.01)) // Additional force pulling nodes to the y center
@@ -106,8 +106,8 @@ export default defineComponent({
         .selectAll('line')
         .data(links)
         .enter().append('line')
-        .attr('stroke-width', (d) => d.count)
-        .attr('stroke', (d) => d.state === 'OK' ? '#999' : '#f00')
+        .attr('stroke-width', (d) => Math.sqrt(d.count))
+        .attr('stroke', (d) => d.state === 'OK' ? '#7b7' : '#a66')
         // Tooltip events for edges
         .on('mouseover', (event, d) => {
           tooltip
@@ -131,7 +131,6 @@ export default defineComponent({
         .enter().append('circle')
         .attr('r', 10)
         .attr('fill', (d) => d.state === 'OK' ? 'green' : 'red')
-        .attr('stroke', '#000')
         .call(drag(simulation))
         // Tooltip events for nodes
         .on('mouseover', (event, d) => {
