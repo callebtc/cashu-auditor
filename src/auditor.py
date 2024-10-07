@@ -81,6 +81,7 @@ class Auditor:
                     await self.bump_mint_n_mints(mint)
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
+                    await self.recover_errors(wallet, e)
                     await self.bump_mint_errors(mint)
 
     async def check_proofs(self, wallet: Wallet):
@@ -108,9 +109,7 @@ class Auditor:
         for p in wallet.proofs:
             p.reserved = False
 
-    async def check_outputs_have_been_signed_error(
-        self, wallet: Wallet, e: Exception
-    ) -> bool:
+    async def recover_errors(self, wallet: Wallet, e: Exception) -> bool:
         if "outputs have already been signed before" in str(e):
             logger.error(
                 "Outputs have already been signed before error. Bumping keyset counter."
@@ -311,9 +310,7 @@ class Auditor:
                     set_reserved=True,
                 )
             except Exception as e:
-                this_error = await self.check_outputs_have_been_signed_error(
-                    from_wallet, e
-                )
+                this_error = await self.recover_errors(from_wallet, e)
                 raise e
 
             try:
@@ -331,9 +328,7 @@ class Auditor:
             except Exception as e:
                 logger.error(f"Error melting: {e}")
                 await from_wallet.set_reserved(send_proofs, reserved=False)
-                this_error = await self.check_outputs_have_been_signed_error(
-                    from_wallet, e
-                )
+                this_error = await self.recover_errors(from_wallet, e)
                 if this_error:
                     logger.info("Not storing this event as a failure.")
                     raise e
