@@ -1,10 +1,10 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header elevated class="item-center">
       <q-toolbar class="bg-marginal-bg">
 
-        <q-toolbar-title>
-          Cashu Lightning Swap Auditor
+        <q-toolbar-title class="q-py-md q-mx-auto">
+          Swap Auditor for Cashu mints
         </q-toolbar-title>
 
         <q-space />
@@ -36,3 +36,12 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped>
+.title-centered {
+  text-align: center;
+  max-width: 500px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

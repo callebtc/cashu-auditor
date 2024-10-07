@@ -15,8 +15,7 @@
         @keyup.enter="submitToken"
       >
         <template v-slot:append>
-          <q-btn label="Submit" color="primary" @click="submitToken" />
-          <q-spinner v-if="loading" size="50px" class="q-my-md" color="primary" />
+          <q-btn color="primary" @click="submitToken" ><q-spinner v-if="loading" size="15px" class="q-mr-sm" color="white" />Submit</q-btn>
         </template>
       </q-input>
       </q-card>

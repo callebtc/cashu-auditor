@@ -1,4 +1,8 @@
 <template>
+  <q-card class="bg-dark">
+  <q-card-section class="bg-dark text-light">
+    <h2 class="text-h6">Mint Graph</h2>
+  </q-card-section>
   <div class="mint-graph-container">
     <svg ref="svgRef"></svg>
     <q-spinner v-if="loading" color="primary" size="50px" class="q-my-md" />
@@ -7,6 +11,7 @@
     </div>
     <div ref="tooltip" class="tooltip" style="opacity: 0;"></div>
   </div>
+</q-card>
 </template>
 
 <script lang="ts">
