@@ -85,6 +85,9 @@ class Auditor:
 
     async def check_proofs(self, wallet: Wallet):
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
+        logger.info(
+            f"Checking {len(reserved_proofs)} reserved proofs on mint {wallet.url}"
+        )
         # invalidate proofs in batches
         try:
             batch_size = 50
