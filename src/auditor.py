@@ -313,6 +313,9 @@ class Auditor:
                 )
             except Exception as e:
                 this_error = await self.recover_errors(from_wallet, e)
+                logger.error(
+                    f"Could not select amount ({melt_quote.amount} sat) plus fee reserve ({melt_quote.fee_reserve} sat) total {total_amount} sat from sending wallet."
+                )
                 raise e
 
             mint_worked = False
@@ -327,22 +330,25 @@ class Auditor:
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
+                logger.info(
+                    f"Melt successful: time taken: {time_taken_ms} ms. Amount: {melt_quote.amount} sat. Fee reserve: {melt_quote.fee_reserve} sat. Fee: {(balance_before_melt - balance_after_melt) - amount} sat."
+                )
             except Exception as e:
                 logger.error(f"Error melting: {e}")
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
                 this_error = await self.recover_errors(from_wallet, e)
-                # still try to mint in case of an error
-                try:
-                    logger.info("Trying to mint although melt failed.")
-                    await asyncio.sleep(5)
-                    proofs = await to_wallet.mint(amount, invoice.id)
-                    mint_worked = True
-                except Exception as e:
-                    logger.error(f"Error minting: {e}")
-                    this_error = await self.recover_errors(from_wallet, e)
-                    pass
+                # still try to mint in case of any non-recoverable error
+                if not this_error:
+                    try:
+                        logger.info("Trying to mint although melt failed.")
+                        await asyncio.sleep(5)
+                        proofs = await to_wallet.mint(amount, invoice.id)
+                        mint_worked = True
+                    except Exception as e:
+                        logger.error(f"Error minting: {e}")
+                        pass
 
                 if not mint_worked:
                     await from_wallet.set_reserved(send_proofs, reserved=False)
