@@ -30,7 +30,7 @@
               </q-item-label>
             </q-item-label>
             <!-- error message -->
-            <q-item-label v-if="swap.state === 'ERROR' && swap.error.length > 0" caption>
+            <q-item-label v-if="swap.state === 'ERROR' && swap.error" caption>
               <span class="text-bold" >Error:</span> {{ swap.error }}
             </q-item-label>
           </q-item-section>
