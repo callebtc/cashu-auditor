@@ -26,6 +26,7 @@ export interface SwapEventRead {
   created_at: string;
   time_taken: number;
   state: string;
+  error: string;
 }
 
 export interface ChargeRequest {

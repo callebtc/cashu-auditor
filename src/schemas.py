@@ -45,6 +45,7 @@ class SwapEventRead(BaseModel):
     created_at: datetime
     time_taken: int
     state: MintState
+    error: Optional[str] = None
 
     class Config:
         orm_mode = True

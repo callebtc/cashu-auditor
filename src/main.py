@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 import json
+import os
 from typing import List
 
 from cashu.wallet.helpers import deserialize_token_from_string
@@ -14,6 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import models, schemas, auditor
 from .database import engine, get_db
+from alembic import command
+from alembic.config import Config
 
 app = FastAPI()
 
@@ -33,15 +36,17 @@ async def startup():
     """
     Startup event to create database tables and load all Mints into memory.
     """
-    # Create the database tables (only needed once; consider using migrations in production)
     async with engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)
 
-    # Load all mints into the in-memory cache
+    os.chdir("src")
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    os.chdir("..")
+
     async with AsyncSession(bind=engine) as session:
         result = await session.execute(select(models.Mint))
         mints = result.scalars().all()
-        # Populate the cache as a dictionary {id: Mint}
         app.state.mints_cache = {mint.id: mint for mint in mints}
     print(f"Loaded {len(app.state.mints_cache)} mints into the in-memory cache.")
 
