@@ -1,4 +1,3 @@
-import stat
 from sqlalchemy import Column, DateTime, Integer, String, func
 from sqlalchemy.orm import declarative_base
 
@@ -35,3 +34,4 @@ class SwapEvent(Base):
     created_at = Column(DateTime, default=func.now())
     time_taken = Column(Integer)
     state = Column(String(10))
+    error = Column(String(10_000))
