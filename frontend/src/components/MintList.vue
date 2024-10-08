@@ -7,7 +7,8 @@
   <div>
     <!-- Token Input -->
     <div class="q-pa-md">
-      <q-card>
+      <!-- header: Donate token -->
+      <q-item-label class="text-h6 q-mb-md" color="white">Donate ecash</q-item-label>
       <q-input
         filled
         v-model="token"
@@ -18,7 +19,6 @@
           <q-btn color="primary" @click="submitToken" ><q-spinner v-if="loading" size="15px" class="q-mr-sm" color="white" />Submit</q-btn>
         </template>
       </q-input>
-      </q-card>
     </div>
 
     <!-- Error Message -->

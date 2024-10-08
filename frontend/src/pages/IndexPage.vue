@@ -1,7 +1,10 @@
 <template>
-      <div class="text-center q-pa-md q-ma-lg q-card bg-dark text-light" style="font-family: 'Roboto', sans-serif; font-size: 1rem; border: 0px solid #ccc; max-width: 700px; margin: 20px auto 0px auto;">
-      Round Robin Auditor: Donate ecash from any Cashu mint so it can be audited perpetually. This app forever sends random Lightning payments between mints. The sats go in an infinite circle (minus fees). If a mint fails to pay an invoice, it is marked with scary red label.
-    </div>
+  <div class="q-pa-md">
+    <h1 class="text-h6">Lightning Auditor</h1>
+    <p>
+      Donate ecash from any Cashu mint so it can be audited perpetually. This app sends random Lightning payments between mints. Forever. The sats go in a circle until all is lost to fees or rugs. If a mint fails to pay an invoice, it is marked with scary red label.
+    </p>
+  </div>
   <MintList />
   <MintGraph />
   <SwapList />
