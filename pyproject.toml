@@ -14,8 +14,8 @@ aiosqlite = "^0.20.0"
 ruff = "^0.6.9"
 isort = "^5.13.2"
 bolt11 = "^2.1.0"
-cashu = {path = "contrib/nutshell"}
 alembic = "^1.13.3"
+cashu = {path = "contrib/nutshell"}
 
 [tool.poetry.scripts]
 auditor = "src.main:app"

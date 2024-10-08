@@ -330,10 +330,11 @@ class Auditor:
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
                 logger.info(
-                    f"Melt successful: time taken: {time_taken_ms} ms. Amount: {melt_quote.amount} sat. Fee reserve: {melt_quote.fee_reserve} sat. Fee: {(balance_before_melt - balance_after_melt) - amount} sat."
+                    f"Melt successful: time taken: {int(time_taken_ms)} ms. Amount: {melt_quote.amount} sat. Fee reserve: {melt_quote.fee_reserve} sat. Fee: {(balance_before_melt - balance_after_melt) - amount} sat."
                 )
             except Exception as e:
                 logger.error(f"Error melting: {e}")
+                melt_error = sanitize_err(e)
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs()
                 balance_after_melt = from_wallet.available_balance
@@ -345,8 +346,8 @@ class Auditor:
                         await asyncio.sleep(5)
                         proofs = await to_wallet.mint(amount, invoice.id)
                         mint_worked = True
-                    except Exception as e:
-                        logger.error(f"Error minting: {e}")
+                    except Exception as e2:
+                        logger.error(f"Error minting: {e2}")
                         pass
 
                 if not mint_worked:
@@ -362,7 +363,7 @@ class Auditor:
                         0,
                         0,
                         "ERROR",
-                        sanitize_err(e),
+                        melt_error,
                     )
 
                     raise e
