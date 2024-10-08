@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import Optional
 import bolt11
 import random
 from cashu.wallet.wallet import Wallet
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import Mint, SwapEvent
 from .database import engine, get_db
 from .schemas import MintState
+from .helpers import sanitize_err
 
 SWAP_DELAY = 5 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
@@ -236,6 +238,7 @@ class Auditor:
         fee: int,
         time_taken: int,
         state: str,
+        error: Optional[str] = None,
     ):
         async with AsyncSession(engine) as session:
             swap_event = SwapEvent(
@@ -247,6 +250,7 @@ class Auditor:
                 fee=fee,
                 time_taken=time_taken,
                 state=state,
+                error=error,
             )
             session.add(swap_event)
             await session.commit()
@@ -292,12 +296,7 @@ class Auditor:
                 logger.error(f"Error getting melt quote: {e}")
                 await self.bump_mint_errors(from_mint)
                 await self.store_swap_event(
-                    from_mint,
-                    to_mint,
-                    amount,
-                    0,
-                    0,
-                    "ERROR",
+                    from_mint, to_mint, amount, 0, 0, "ERROR", sanitize_err(e)
                 )
                 raise e
 
@@ -363,6 +362,7 @@ class Auditor:
                         0,
                         0,
                         "ERROR",
+                        sanitize_err(e),
                     )
 
                     raise e
