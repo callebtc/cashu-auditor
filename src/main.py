@@ -17,6 +17,7 @@ from . import models, schemas, auditor
 from .database import engine, get_db
 from alembic import command
 from alembic.config import Config
+from .logging import configure_logger
 
 app = FastAPI()
 
@@ -36,6 +37,8 @@ async def startup():
     """
     Startup event to create database tables and load all Mints into memory.
     """
+    configure_logger()
+
     async with engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)
 

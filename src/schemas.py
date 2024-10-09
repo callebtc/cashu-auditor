@@ -10,6 +10,7 @@ class MintState(Enum):
     OK = "OK"
     WARN = "WARN"
     ERROR = "ERROR"
+    UNKNOWN = "UNKNOWN"
 
 
 class ChargeRequest(BaseModel):
