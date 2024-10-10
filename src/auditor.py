@@ -30,7 +30,7 @@ class Auditor:
     async def init_wallet(self):
         # we need to run the migrations once
         self.wallet = await Wallet.with_db("https://testnut.cashu.space", ".")
-        await self.wallet.load_proofs()
+        await self.wallet.load_proofs(reload=True)
         logger.info(f"Wallet initialized. Balance: {self.wallet.available_balance}")
 
         await self.update_all_balances()
@@ -55,7 +55,7 @@ class Auditor:
         # load all wallets and get mint quotes that are outstanding
         for mint in mints:
             wallet = await Wallet.with_db(mint.url, ".")
-            await wallet.load_proofs()
+            await wallet.load_proofs(reload=True)
             try:
                 logger.info(f"Loading mint: {mint.url}")
                 await wallet.load_mint()
@@ -132,10 +132,17 @@ class Auditor:
             mints = result.scalars().all()
             for mint in mints:
                 wallet = await Wallet.with_db(mint.url, ".")
-                await wallet.load_proofs()
+                await wallet.load_proofs(reload=True)
                 await self.check_proofs(wallet)
                 mint.balance = wallet.available_balance
             await session.commit()
+
+    async def update_mint_balance(self, mint: Mint):
+        wallet = await Wallet.with_db(mint.url, ".")
+        await wallet.load_proofs(reload=True)
+        await self.check_proofs(wallet)
+        mint.balance = wallet.available_balance
+        return mint
 
     async def set_mint_state(self, mint: Mint, state: MintState):
         async with AsyncSession(engine) as session:
@@ -174,7 +181,7 @@ class Auditor:
             raise ValueError("Only satoshi units are supported.")
         self.wallet = await Wallet.with_db(token_obj.mint, ".")
         await self.wallet.load_mint()
-        await self.wallet.load_proofs()
+        await self.wallet.load_proofs(reload=True)
         balance_before = self.wallet.available_balance
         wallet_after = await receive(self.wallet, token_obj)
         balance_received = wallet_after.available_balance - balance_before
@@ -263,7 +270,7 @@ class Auditor:
             to_wallet = await Wallet.with_db(to_mint.url, ".")
             try:
                 await to_wallet.load_mint()
-                await to_wallet.load_proofs()
+                await to_wallet.load_proofs(reload=True)
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(to_mint)
@@ -273,7 +280,7 @@ class Auditor:
             from_wallet = await Wallet.with_db(from_mint.url, ".")
             try:
                 await from_wallet.load_mint()
-                await from_wallet.load_proofs()
+                await from_wallet.load_proofs(reload=True)
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(from_mint)
@@ -333,7 +340,7 @@ class Auditor:
                     melt_quote.quote,
                 )
                 time_taken_ms = (time.time() - time_start) * 1000
-                await from_wallet.load_proofs()
+                await from_wallet.load_proofs(reload=True)
                 balance_after_melt = from_wallet.available_balance
                 logger.info(
                     f"Melt successful: time taken: {int(time_taken_ms)} ms. Amount: {melt_quote.amount} sat. Fee reserve: {melt_quote.fee_reserve} sat. Fee: {(balance_before_melt - balance_after_melt) - amount} sat."
@@ -342,7 +349,7 @@ class Auditor:
                 logger.error(f"Error melting: {e}")
                 melt_error = sanitize_err(e)
                 time_taken_ms = (time.time() - time_start) * 1000
-                await from_wallet.load_proofs()
+                await from_wallet.load_proofs(reload=True)
                 balance_after_melt = from_wallet.available_balance
                 this_error = await self.recover_errors(from_wallet, e)
                 # still try to mint in case of any non-recoverable error
@@ -398,6 +405,9 @@ class Auditor:
                 time_taken_ms,
                 MintState.OK.value,
             )
+
+            await self.update_mint_balance(from_mint)
+            await self.update_mint_balance(to_mint)
 
             logger.success(
                 f"Swap from {from_mint.url} to {to_mint.url} of {amount} sat successful."
