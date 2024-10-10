@@ -53,6 +53,11 @@
           <q-icon :name="getStateIcon(props.row.state).name" :color="getStateIcon(props.row.state).color" />
         </td>
       </template>
+      <template v-slot:body-cell-version="props">
+        <td class="text-left">
+          {{ getVersion(props.row.info) }}
+        </td>
+      </template>
     </q-table>
   </div>
 </template>
@@ -75,6 +80,7 @@ export default defineComponent({
       { name: 'url', label: 'URL', field: 'url', sortable: true, align: 'left' },
       // { name: 'info', label: 'Info', field: 'info', sortable: true },
       { name: 'name', label: 'Name', field: 'name', sortable: true, align: 'left' },
+      { name: 'version', label: 'Version', field: 'info', sortable: true, align: 'left' },
       { name: 'balance', label: 'Balance (sat)', field: 'balance', sortable: true, align: 'left' },
       { name: 'sum_donations', label: 'Total donated (sat)', field: 'sum_donations', sortable: true, align: 'left' },
       { name: 'updated_at', label: 'Updated At', field: 'updated_at', sortable: true, align: 'left' },
@@ -134,6 +140,15 @@ export default defineComponent({
       }
     };
 
+    const getVersion = (info: string) => {
+      try {
+        const parsedInfo = JSON.parse(info);
+        return parsedInfo.version;
+      } catch (err) {
+        return '';
+      }
+    };
+
 
     onMounted(() => {
       fetchMints();
@@ -155,6 +170,7 @@ export default defineComponent({
       submitToken,
       formatDate,
       getStateIcon,
+      getVersion
     };
   },
 });
