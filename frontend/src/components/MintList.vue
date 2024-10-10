@@ -30,7 +30,6 @@
     <q-table
       title="Mints"
       :rows="mints"
-      :grid="$q.screen.xs"
       :columns="columns"
       row-key="id"
       :loading="loading"
@@ -51,6 +50,16 @@
       <template v-slot:body-cell-state="props">
         <td class="text-left">
           <q-icon :name="getStateIcon(props.row.state).name" :color="getStateIcon(props.row.state).color" />
+        </td>
+      </template>
+      <template v-slot:body-cell-n_errors="props">
+        <td class="text-left">
+          <q-badge :color="props.row.n_errors > 0 ? 'negative' : 'grey-7'" >{{ props.row.n_errors }}</q-badge>
+        </td>
+      </template>
+      <template v-slot:body-cell-n_melts="props">
+        <td class="text-left">
+          <q-badge :color="props.row.n_melts > 0 ? 'positive' : 'grey-7'" text-color="dark">{{ props.row.n_melts }}</q-badge>
         </td>
       </template>
     </q-table>
