@@ -144,6 +144,10 @@ class Auditor:
         await wallet.load_proofs(reload=True)
         await self.check_proofs(wallet)
         mint.balance = wallet.available_balance
+        async with AsyncSession(engine) as session:
+            await session.merge(mint)
+            await session.commit()
+        logger.info(f"Updated balance for mint {mint.url} to {mint.balance} sat.")
         return mint
 
     async def update_all_mint_infos(self):
