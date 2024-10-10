@@ -16,7 +16,7 @@ from .database import engine, get_db
 from .schemas import MintState
 from .helpers import sanitize_err
 
-SWAP_DELAY = 15 * 60  # seconds
+SWAP_DELAY = 5 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
 
@@ -34,7 +34,7 @@ class Auditor:
         logger.info(f"Wallet initialized. Balance: {self.wallet.available_balance}")
 
         await self.update_all_balances()
-        asyncio.create_task(self.update_balances_task())
+        # asyncio.create_task(self.update_balances_task())
         asyncio.create_task(self.monitor_swap_task())
         # asyncio.create_task(self.mint_outstanding())
 
