@@ -54,12 +54,12 @@
       </template>
       <template v-slot:body-cell-n_errors="props">
         <td class="text-left">
-          <q-badge :color="props.row.n_errors > 0 ? 'negative' : 'grey-7'" >{{ props.row.n_errors }}</q-badge>
+          <q-badge :color="props.row.n_errors > 0 && props.row.state == 'ERROR'? 'negative' : 'grey-7'" >{{ props.row.n_errors }}</q-badge>
         </td>
       </template>
       <template v-slot:body-cell-n_melts="props">
         <td class="text-left">
-          <q-badge :color="props.row.n_melts > 0 ? 'positive' : 'grey-7'" text-color="dark">{{ props.row.n_melts }}</q-badge>
+          <q-badge :color="props.row.n_melts > 0 && props.row.state == 'OK' ? 'positive' : 'grey-7'" text-color="dark">{{ props.row.n_melts }}</q-badge>
         </td>
       </template>
     </q-table>
