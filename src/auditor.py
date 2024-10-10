@@ -236,6 +236,7 @@ class Auditor:
                 for mint in mints
                 if mint.state == MintState.OK.value or mint.n_melts > 0
             ]
+            mints = [mint for mint in mints if mint.balance < mint.sum_donations]
             mint = max(
                 mints,
                 key=lambda mint: (
