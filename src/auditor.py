@@ -296,7 +296,13 @@ class Auditor:
                 logger.error(f"Error getting melt quote: {e}")
                 await self.bump_mint_errors(from_mint)
                 await self.store_swap_event(
-                    from_mint, to_mint, amount, 0, 0, "ERROR", sanitize_err(e)
+                    from_mint,
+                    to_mint,
+                    amount,
+                    0,
+                    0,
+                    MintState.ERROR.value,
+                    sanitize_err(e),
                 )
                 raise e
 
@@ -362,7 +368,7 @@ class Auditor:
                         amount,
                         0,
                         0,
-                        "ERROR",
+                        MintState.ERROR.value,
                         melt_error,
                     )
 
@@ -390,7 +396,7 @@ class Auditor:
                 amount,
                 (balance_before_melt - balance_after_melt) - amount,
                 time_taken_ms,
-                "OK",
+                MintState.OK.value,
             )
 
             logger.success(

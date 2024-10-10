@@ -157,7 +157,7 @@ export default defineComponent({
         .data(nodes)
         .enter().append('circle')
         .attr('r', 10)
-        .attr('fill', (d) => d.state === 'OK' ? 'green' : 'red')
+        .attr('fill', (d) => getStateColor(d.state))
         .attr('stroke', '#000')
         .call(drag(simulation))
         // Tooltip events for nodes
@@ -233,6 +233,20 @@ export default defineComponent({
         .on('end', dragended);
     };
 
+    const getStateColor = (state: string) => {
+      switch (state) {
+        case 'OK':
+          return 'green';
+        case 'WARN':
+          return 'yellow';
+        case 'ERROR':
+          return 'red';
+        case 'UNKNOWN':
+        default:
+          return 'grey';
+      }
+    };
+
     let intervalId: number | undefined;
 
     onMounted(() => {
@@ -254,6 +268,7 @@ export default defineComponent({
       tooltipRef, // Return tooltipRef here
       loading,
       error,
+      getStateColor
     };
   },
 });

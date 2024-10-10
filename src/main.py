@@ -82,7 +82,7 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
             balance=auditor.wallet.available_balance,
             sum_donations=auditor.wallet.available_balance,
             next_update=datetime.utcnow() + timedelta(minutes=1),
-            state="OK",
+            state=schemas.MintState.UNKNOWN.value,
             n_errors=0,
             n_mints=0,
             n_melts=0,

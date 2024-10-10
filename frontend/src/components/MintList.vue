@@ -50,7 +50,7 @@
       </template>
       <template v-slot:body-cell-state="props">
         <td class="text-left">
-          <q-icon :name="props.row.state === 'OK' ? 'check_circle' : 'cancel'" :color="props.row.state === 'OK' ? 'positive' : 'negative'"/>
+          <q-icon :name="getStateIcon(props.row.state).name" :color="getStateIcon(props.row.state).color" />
         </td>
       </template>
     </q-table>
@@ -120,6 +120,21 @@ export default defineComponent({
       return new Date(dateStr).toLocaleString();
     };
 
+    const getStateIcon = (state: string) => {
+      switch (state) {
+        case 'OK':
+          return { name: 'check_circle', color: 'positive' };
+        case 'WARN':
+          return { name: 'warning', color: 'warning' };
+        case 'ERROR':
+          return { name: 'cancel', color: 'negative' };
+        case 'UNKNOWN':
+        default:
+          return { name: 'help', color: 'grey-7' };
+      }
+    };
+
+
     onMounted(() => {
       fetchMints();
       intervalId = window.setInterval(fetchMints, 60_000);
@@ -139,6 +154,7 @@ export default defineComponent({
       error,
       submitToken,
       formatDate,
+      getStateIcon,
     };
   },
 });
