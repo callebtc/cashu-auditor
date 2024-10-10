@@ -53,11 +53,6 @@
           <q-icon :name="getStateIcon(props.row.state).name" :color="getStateIcon(props.row.state).color" />
         </td>
       </template>
-      <template v-slot:body-cell-version="props">
-        <td class="text-left">
-          {{ getVersion(props.row.info) }}
-        </td>
-      </template>
     </q-table>
   </div>
 </template>
@@ -98,6 +93,10 @@ export default defineComponent({
       error.value = '';
       try {
         mints.value = await getMints(0, 0);
+        // monkeypatch version into info field
+        mints.value.forEach(mint => {
+          if (mint.info) { mint.info = getVersion(mint.info) };
+        });
       } catch (err) {
         error.value = 'Error fetching mints.';
         console.error(err);
