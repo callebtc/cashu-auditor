@@ -167,13 +167,7 @@ class Auditor:
             result = await session.execute(select(Mint).where(Mint.url == wallet.url))
             mint = result.scalars().first()
             mint.info = json.dumps(wallet.mint_info.dict())
-            await session.commit
-
-    async def set_mint_state(self, mint: Mint, state: MintState):
-        async with AsyncSession(engine) as session:
-            mint.state = state.value
-            session.add(mint)
-            await session
+            await session.commit()
 
     async def bump_mint_errors(self, mint: Mint):
         async with AsyncSession(engine) as session:
