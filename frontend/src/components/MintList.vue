@@ -131,7 +131,42 @@ export default defineComponent({
     };
 
     const formatDate = (dateStr: string) => {
-      return new Date(dateStr).toLocaleString();
+      // Check if the dateStr already ends with 'Z' or contains timezone info
+      const hasTimezone = /([Zz]|[+\-]\d{2}:\d{2})$/.test(dateStr);
+      let utcDateStr = dateStr;
+
+      if (!hasTimezone) {
+        // Append 'Z' to indicate UTC if no timezone is present
+        utcDateStr += 'Z';
+      }
+
+      const dateObj = new Date(utcDateStr);
+      if (isNaN(dateObj.getTime())) {
+        console.error(`Invalid date string: ${dateStr}`);
+        return 'Invalid Date';
+      }
+
+      // Define options for time formatting
+      const timeOptions: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      };
+
+      // Define options for date formatting
+      const dateOptions: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      };
+
+      // Format time and date separately
+      const time = dateObj.toLocaleTimeString(undefined, timeOptions);
+      const date = dateObj.toLocaleDateString(undefined, dateOptions);
+
+      // Return in the format: <time>, <date>
+      return `${time}, ${date}`;
     };
 
     const getStateIcon = (state: string) => {
