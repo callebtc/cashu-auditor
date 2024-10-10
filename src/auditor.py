@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from typing import Optional
 import bolt11
@@ -37,6 +38,7 @@ class Auditor:
         # asyncio.create_task(self.update_balances_task())
         asyncio.create_task(self.monitor_swap_task())
         # asyncio.create_task(self.mint_outstanding())
+        # asyncio.create_task(self.update_all_mint_infos())
 
     async def monitor_swap_task(self):
         while True:
@@ -143,6 +145,29 @@ class Auditor:
         await self.check_proofs(wallet)
         mint.balance = wallet.available_balance
         return mint
+
+    async def update_all_mint_infos(self):
+        async with AsyncSession(engine) as session:
+            result = await session.execute(select(Mint))
+            mints = result.scalars().all()
+            for mint in mints:
+                logger.info(f"Updating mint info for {mint.url}")
+                try:
+                    wallet = await Wallet.with_db(mint.url, ".")
+                    await wallet.load_mint()
+                    mint.info = json.dumps(wallet.mint_info.dict())
+                except Exception as e:
+                    logger.error(f"Error loading mint: {e}")
+                    await self.bump_mint_errors(mint)
+                    continue
+            await session.commit()
+
+    async def update_wallet_mint_info(self, wallet: Wallet):
+        async with AsyncSession(engine) as session:
+            result = await session.execute(select(Mint).where(Mint.url == wallet.url))
+            mint = result.scalars().first()
+            mint.info = json.dumps(wallet.mint_info.dict())
+            await session.commit
 
     async def set_mint_state(self, mint: Mint, state: MintState):
         async with AsyncSession(engine) as session:
@@ -271,6 +296,7 @@ class Auditor:
             try:
                 await to_wallet.load_mint()
                 await to_wallet.load_proofs(reload=True)
+                await self.update_wallet_mint_info(to_wallet)
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(to_mint)
@@ -281,6 +307,7 @@ class Auditor:
             try:
                 await from_wallet.load_mint()
                 await from_wallet.load_proofs(reload=True)
+                await self.update_wallet_mint_info(from_wallet)
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(from_mint)
