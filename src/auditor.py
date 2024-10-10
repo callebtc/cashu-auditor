@@ -178,12 +178,18 @@ class Auditor:
             mint_in_session = await session.merge(mint)
             mint_in_session.n_errors += 1
             mint_in_session.state = MintState.ERROR.value
+            logger.debug(
+                f"Bumping n_errors for {mint.url} from {mint.n_errors} to {mint_in_session.n_errors}"
+            )
             await session.commit()
 
     async def bump_mint_n_mints(self, mint: Mint):
         async with AsyncSession(engine) as session:
             mint_in_session = await session.merge(mint)
             mint_in_session.n_mints += 1
+            logger.debug(
+                f"Bumping n_mints for {mint.url} from {mint.n_mints} to {mint_in_session.n_mints}"
+            )
             await session.commit()
 
     async def bump_mint_n_melts(self, mint: Mint):
@@ -191,6 +197,9 @@ class Auditor:
             mint_in_session = await session.merge(mint)
             mint_in_session.n_melts += 1
             mint_in_session.state = MintState.OK.value
+            logger.debug(
+                f"Bumping n_melts for {mint.url} from {mint.n_melts} to {mint_in_session.n_melts}"
+            )
             await session.commit()
 
     async def update_balances_task(self):
