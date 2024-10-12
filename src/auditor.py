@@ -143,10 +143,15 @@ class Auditor:
         wallet = await Wallet.with_db(mint.url, ".")
         await wallet.load_proofs(reload=True)
         await self.check_proofs(wallet)
-        mint.balance = wallet.available_balance
+        new_balance = wallet.available_balance
         async with AsyncSession(engine) as session:
-            await session.merge(mint)
+            result = await session.execute(select(Mint).where(Mint.id == mint.id))
+            mint_in_session = result.scalars().first()
+            if not mint_in_session:
+                raise ValueError(f"Mint with ID {mint.id} not found.")
+            mint_in_session.balance = new_balance
             await session.commit()
+            await session.expunge(mint_in_session)
         logger.info(f"Updated balance for mint {mint.url} to {mint.balance} sat.")
         return mint
 
@@ -175,32 +180,38 @@ class Auditor:
 
     async def bump_mint_errors(self, mint: Mint):
         async with AsyncSession(engine) as session:
-            mint_in_session = await session.merge(mint)
+            result = await session.execute(select(Mint).where(Mint.id == mint.id))
+            mint_in_session = result.scalars().first()
             mint_in_session.n_errors += 1
             mint_in_session.state = MintState.ERROR.value
             logger.debug(
                 f"Bumping n_errors for {mint.url} from {mint.n_errors} to {mint_in_session.n_errors}"
             )
             await session.commit()
+            await session.expunge(mint_in_session)
 
     async def bump_mint_n_mints(self, mint: Mint):
         async with AsyncSession(engine) as session:
-            mint_in_session = await session.merge(mint)
+            result = await session.execute(select(Mint).where(Mint.id == mint.id))
+            mint_in_session = result.scalars().first()
             mint_in_session.n_mints += 1
             logger.debug(
                 f"Bumping n_mints for {mint.url} from {mint.n_mints} to {mint_in_session.n_mints}"
             )
             await session.commit()
+            await session.expunge(mint_in_session)
 
     async def bump_mint_n_melts(self, mint: Mint):
         async with AsyncSession(engine) as session:
-            mint_in_session = await session.merge(mint)
+            result = await session.execute(select(Mint).where(Mint.id == mint.id))
+            mint_in_session = result.scalars().first()
             mint_in_session.n_melts += 1
             mint_in_session.state = MintState.OK.value
             logger.debug(
                 f"Bumping n_melts for {mint.url} from {mint.n_melts} to {mint_in_session.n_melts}"
             )
             await session.commit()
+            await session.expunge(mint_in_session)
 
     async def update_balances_task(self):
         while True:
@@ -223,6 +234,10 @@ class Auditor:
         async with AsyncSession(engine) as session:
             result = await session.execute(select(Mint).where(Mint.url == mint_url))
             mint = result.scalars().first()
+            if mint:
+                await session.expunge(mint)  # Detach the mint
+            else:
+                logger.error(f"Mint with URL {mint_url} not found.")
             return mint
 
     async def update_mint_db(self, wallet: Wallet):
@@ -254,6 +269,7 @@ class Auditor:
                     else 0
                 ),
             )
+            await session.expunge(mint)
             return mint
 
     async def choose_from_mint_and_amount(self, to_mint: Mint) -> tuple[Mint, int]:
@@ -268,6 +284,8 @@ class Auditor:
         amount = random.randint(MINIMUM_AMOUNT, max_amount)
         mints = [mint for mint in mints if mint.balance * 0.8 >= amount]
         from_mint = random.choice(mints)
+        async with AsyncSession(engine) as session:
+            await session.expunge(from_mint)
         return from_mint, amount
 
     async def store_swap_event(
