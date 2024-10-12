@@ -73,7 +73,6 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
         mint.sum_donations += received
         mint.next_update = datetime.utcnow() + timedelta(minutes=1)
         mint.info = json.dumps(auditor.wallet.mint_info.dict())
-
     else:
         mint = models.Mint(
             name=auditor.wallet.mint_info.name,
@@ -87,7 +86,7 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
             n_mints=0,
             n_melts=0,
         )
-    db.add(mint)
+        db.add(mint)
     await db.commit()
     await db.refresh(mint)
     await db.expunge(mint)
