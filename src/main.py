@@ -90,6 +90,7 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
     db.add(mint)
     await db.commit()
     await db.refresh(mint)
+    await db.expunge(mint)
     return mint
 
 
