@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+from tkinter.tix import MAX
 from typing import Optional
 import bolt11
 import random
@@ -20,6 +21,7 @@ from .helpers import sanitize_err
 SWAP_DELAY = 5 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
+MAXIMUM_AMOUNT = 100  # satoshis
 
 
 class Auditor:
@@ -37,8 +39,8 @@ class Auditor:
         await self.update_all_balances()
         # asyncio.create_task(self.update_balances_task())
         # asyncio.create_task(self.monitor_swap_task())
-        asyncio.create_task(self.mint_outstanding())
-        # asyncio.create_task(self.update_all_mint_infos())
+        # asyncio.create_task(self.mint_outstanding())
+        asyncio.create_task(self.update_all_mint_infos())
 
     async def monitor_swap_task(self):
         while True:
@@ -68,6 +70,7 @@ class Auditor:
             mint_quotes = await get_lightning_invoices(
                 db=wallet.db,
                 paid=False,
+                mint=mint.url,
             )
             # TODO: Filter invoices per mint!!!
             for mint_quote in mint_quotes:
@@ -278,6 +281,7 @@ class Auditor:
         max_receivable = max(max_receivable, MINIMUM_AMOUNT)
         max_amount = min(max_receivable, mint_max_balance.balance)
         amount = random.randint(MINIMUM_AMOUNT, max_amount)
+        amount = min(amount, MAXIMUM_AMOUNT)
         mints = [mint for mint in mints if mint.balance * 0.8 >= amount]
         from_mint = random.choice(mints)
         async with AsyncSession(engine) as session:
