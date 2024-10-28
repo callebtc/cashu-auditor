@@ -1,20 +1,18 @@
 import asyncio
 import json
 import time
-from tkinter.tix import MAX
 from typing import Optional
 import bolt11
 import random
 from cashu.wallet.wallet import Wallet
 from cashu.wallet.crud import get_lightning_invoices, bump_secret_derivation
-from cashu.core.models import GetInfoResponse
 from cashu.wallet.helpers import receive, deserialize_token_from_string
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Mint, SwapEvent
-from .database import engine, get_db
+from .database import engine
 from .schemas import MintState
 from .helpers import sanitize_err
 
