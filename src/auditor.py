@@ -72,11 +72,7 @@ class Auditor:
             # TODO: Filter invoices per mint!!!
             for mint_quote in mint_quotes:
                 invoice = bolt11.decode(mint_quote.bolt11)
-                if (
-                    mint_quote.amount < 0
-                    or mint_quote.paid
-                    or invoice.expiry_time < time.time()
-                ):
+                if mint_quote.amount < 0 or mint_quote.paid:
                     continue
                 logger.info(f"Checking unpaid mint quote: {mint_quote}")
                 await asyncio.sleep(10)
