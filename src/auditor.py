@@ -16,7 +16,7 @@ from .database import engine
 from .schemas import MintState
 from .helpers import sanitize_err
 
-SWAP_DELAY = 5 * 60  # seconds
+SWAP_DELAY = 10  # 5 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
 MAXIMUM_AMOUNT = 100  # satoshis
