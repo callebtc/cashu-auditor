@@ -11,6 +11,7 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from contrib.nutshell.cashu.core.helpers import sum_proofs
 from src.models import Mint, SwapEvent
 from .database import engine
 from .schemas import MintState
@@ -477,8 +478,9 @@ class Auditor:
             if not mint_worked:
                 try:
                     logger.info("Minting after melt succeed.")
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(2)
                     proofs = await to_wallet.mint(amount, invoice.id)
+                    logger.info(f"Minted {sum_proofs(proofs)} sat to {to_mint.url}")
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
                     await self.bump_mint_errors(to_mint)
