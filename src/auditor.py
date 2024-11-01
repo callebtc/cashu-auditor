@@ -147,7 +147,7 @@ class Auditor:
         wallet = await Wallet.with_db(mint.url, ".")
         await wallet.load_proofs(reload=True)
         new_balance = wallet.available_balance
-        async with AsyncSession(engine) as session:
+        async with AsyncSession(engine, expire_on_commit=False) as session:
             result = await session.execute(select(Mint).where(Mint.id == mint.id))
             mint_in_session = result.scalars().first()
             if not mint_in_session:
@@ -211,7 +211,7 @@ class Auditor:
                 logger.error(f"Mint with ID {mint.id} not found.")
 
     async def bump_mint_n_mints(self, mint: Mint):
-        async with AsyncSession(engine) as session:
+        async with AsyncSession(engine, expire_on_commit=False) as session:
             result = await session.execute(select(Mint).where(Mint.id == mint.id))
             mint_in_session = result.scalars().first()
             if mint_in_session:
@@ -228,7 +228,7 @@ class Auditor:
                 logger.error(f"Mint with ID {mint.id} not found.")
 
     async def bump_mint_n_melts(self, mint: Mint):
-        async with AsyncSession(engine) as session:
+        async with AsyncSession(engine, expire_on_commit=False) as session:
             result = await session.execute(select(Mint).where(Mint.id == mint.id))
             mint_in_session = result.scalars().first()
             if mint_in_session:
