@@ -12,8 +12,8 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from contrib.nutshell.cashu.core.base import MintQuote, MintQuoteState
-from contrib.nutshell.cashu.core.helpers import sum_proofs
+from cashu.core.base import MintQuote, MintQuoteState, Unit
+from cashu.core.helpers import sum_proofs
 from src.models import Mint, SwapEvent
 from .database import engine
 from .schemas import MintState
@@ -22,7 +22,7 @@ from .helpers import sanitize_err
 SWAP_DELAY = 10  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
-MAXIMUM_AMOUNT = 10  # satoshis
+MAXIMUM_AMOUNT = 21  # satoshis
 
 
 class Auditor:
@@ -49,7 +49,7 @@ class Auditor:
             try:
                 await self.swap_task()
             except Exception as e:
-                logger.error(f"swap_task crashed: {e}")
+                logger.error(f"swap_task failed: {e}")
                 await asyncio.sleep(5)
 
     async def mint_outstanding(self):
@@ -295,11 +295,7 @@ class Auditor:
             result = await session.execute(select(Mint))
             mints = result.scalars().all()
             session.expunge_all()  # Detach mints before session closes
-        mints = [
-            mint
-            for mint in mints
-            if mint.state == MintState.OK.value or mint.n_melts > 0
-        ]
+        mints = [mint for mint in mints if mint.state == MintState.OK.value]
         mints = [mint for mint in mints if mint.balance < mint.sum_donations]
         if not mints:
             raise ValueError("No suitable mints found.")
@@ -392,14 +388,14 @@ class Auditor:
             await self.update_mint_balance(to_mint)
 
             try:
-                invoice = await to_wallet.mint_quote(amount)
+                mint_quote = await to_wallet.mint_quote(amount, unit=Unit.sat)
             except Exception as e:
                 logger.error(f"Error getting invoice: {e}")
                 await self.bump_mint_errors(to_mint.id)
                 raise e
 
             try:
-                melt_quote = await from_wallet.melt_quote(invoice.bolt11)
+                melt_quote = await from_wallet.melt_quote(mint_quote.request)
             except Exception as e:
                 logger.error(f"Error getting melt quote: {e}")
                 await self.bump_mint_errors(from_mint.id)
@@ -434,9 +430,9 @@ class Auditor:
             mint_worked = False
             try:
                 time_start = time.time()
-                melt_response = await from_wallet.melt(
+                await from_wallet.melt(
                     send_proofs,
-                    invoice.bolt11,
+                    mint_quote.request,
                     melt_quote.fee_reserve,
                     melt_quote.quote,
                 )
@@ -458,7 +454,7 @@ class Auditor:
                     try:
                         logger.info("Trying to mint although melt failed.")
                         await asyncio.sleep(5)
-                        proofs = await to_wallet.mint(amount, invoice.id)
+                        proofs = await to_wallet.mint(amount, mint_quote.quote)
                         mint_worked = True
                     except Exception as e2:
                         logger.error(f"Error minting: {e2}")
@@ -488,7 +484,7 @@ class Auditor:
                 try:
                     logger.info("Minting after melt succeed.")
                     await asyncio.sleep(2)
-                    proofs = await to_wallet.mint(amount, invoice.id)
+                    proofs = await to_wallet.mint(amount, mint_quote.quote)
                     logger.info(f"Minted {sum_proofs(proofs)} sat to {to_mint.url}")
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
