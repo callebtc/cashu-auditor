@@ -2,25 +2,22 @@ import asyncio
 import json
 import time
 from typing import Optional
-import bolt11
 import random
 from cashu.wallet.wallet import Wallet
 from cashu.wallet.crud import get_bolt11_mint_quotes, bump_secret_derivation
 from cashu.wallet.helpers import receive, deserialize_token_from_string
-import logging
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cashu.core.base import MintQuote, MintQuoteState, Unit
+from cashu.core.base import MintQuoteState
 from cashu.core.helpers import sum_proofs
-from contrib.nutshell.cashu import mint
 from src.models import Mint, SwapEvent
 from .database import engine
 from .schemas import MintState
 from .helpers import sanitize_err
 
-SWAP_DELAY = 60  # seconds
+SWAP_DELAY = 5 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
 MAXIMUM_AMOUNT = 21  # satoshis
@@ -78,7 +75,7 @@ class Auditor:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(mint)
                 continue
-            logging.info(f"Found {len(mint_quotes)} unpaid mint quotes.")
+            logger.info(f"Found {len(mint_quotes)} unpaid mint quotes.")
             # TODO: Filter invoices per mint!!!
             for i, mint_quote in enumerate(mint_quotes):
                 logger.info(
