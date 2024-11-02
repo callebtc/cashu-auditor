@@ -88,7 +88,7 @@ class Auditor:
                 logger.info(f"Checking unpaid mint quote: {mint_quote}")
                 await asyncio.sleep(1)
                 try:
-                    proofs = await wallet.mint(mint_quote.amount, mint_quote.id)
+                    proofs = await wallet.mint(mint_quote.amount, mint_quote.quote)
                     logger.info(f"Minted {sum_proofs(proofs)} sats on {mint.url}")
                     await self.bump_mint_n_mints(mint)
                 except Exception as e:
