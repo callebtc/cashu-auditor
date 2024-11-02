@@ -38,10 +38,10 @@ class Auditor:
         logger.info(f"Wallet initialized. Balance: {self.wallet.available_balance}")
 
         await self.update_all_balances()
-        # asyncio.create_task(self.monitor_swap_task())
+        asyncio.create_task(self.monitor_swap_task())
 
         # asyncio.create_task(self.update_balances_task())
-        asyncio.create_task(self.mint_outstanding())
+        # asyncio.create_task(self.mint_outstanding())
         # asyncio.create_task(self.update_all_mint_infos())
 
     async def monitor_swap_task(self):
