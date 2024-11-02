@@ -19,7 +19,7 @@ from .database import engine
 from .schemas import MintState
 from .helpers import sanitize_err
 
-SWAP_DELAY = 10  # seconds
+SWAP_DELAY = 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
 MAXIMUM_AMOUNT = 21  # satoshis
@@ -317,12 +317,14 @@ class Auditor:
             session.expunge_all()  # Detach mints
         if not mints:
             raise ValueError("No mints available for selection.")
+
         mint_max_balance = max(mints, key=lambda mint: mint.balance)
         max_receivable = to_mint.sum_donations - to_mint.balance
         max_receivable = max(max_receivable, MINIMUM_AMOUNT)
         max_amount = min(max_receivable, mint_max_balance.balance)
         amount = random.randint(MINIMUM_AMOUNT, max_amount)
         amount = min(amount, MAXIMUM_AMOUNT)
+
         mints = [mint for mint in mints if mint.balance * 0.8 >= amount]
         if not mints:
             raise ValueError("No mints have sufficient balance.")
