@@ -392,7 +392,7 @@ class Auditor:
             await self.update_mint_balance(to_mint)
 
             try:
-                mint_quote = await to_wallet.mint_quote(amount, unit=Unit.sat)
+                mint_quote = await to_wallet.request_mint(amount)
             except Exception as e:
                 logger.error(f"Error getting invoice: {e}")
                 await self.bump_mint_errors(to_mint.id)
