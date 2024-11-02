@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cashu.core.base import MintQuote, MintQuoteState, Unit
 from cashu.core.helpers import sum_proofs
+from contrib.nutshell.cashu import mint
 from src.models import Mint, SwapEvent
 from .database import engine
 from .schemas import MintState
@@ -132,7 +133,11 @@ class Auditor:
             return True
         if "already spent" in str(e) or "Proof already used" in str(e):
             logger.error("Token already spent error. Invalidating wallet proofs.")
-            await wallet.invalidate(wallet.proofs, check_spendable=True)
+            len_checked = len(wallet.proofs)
+            spendable_proofs = await wallet.invalidate(
+                wallet.proofs, check_spendable=True
+            )
+            logger.info(f"Invalidated {len_checked-len(spendable_proofs)} proofs.")
             return True
         return False
 
@@ -301,15 +306,16 @@ class Auditor:
         mints = [mint for mint in mints if mint.balance < mint.sum_donations]
         if not mints:
             raise ValueError("No suitable mints found.")
-        mint = max(
-            mints,
-            key=lambda mint: (
-                (mint.sum_donations - mint.balance) / mint.sum_donations
-                if mint.sum_donations > 0 and mint.balance > 0
-                else 0
-            ),
-        )
-        return mint
+        # mint = max(
+        #     mints,
+        #     key=lambda mint: (
+        #         (mint.sum_donations - mint.balance) / mint.sum_donations
+        #         if mint.sum_donations > 0 and mint.balance > 0
+        #         else 0
+        #     ),
+        # )
+        to_mint = random.choice(mints)
+        return to_mint
 
     async def choose_from_mint_and_amount(self, to_mint: Mint) -> tuple[Mint, int]:
         # choose mint with enough balance to send to to_mint
