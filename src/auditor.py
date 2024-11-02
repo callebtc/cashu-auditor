@@ -21,7 +21,7 @@ from .helpers import sanitize_err
 SWAP_DELAY = 10  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
-MAXIMUM_AMOUNT = 100  # satoshis
+MAXIMUM_AMOUNT = 10  # satoshis
 
 
 class Auditor:
