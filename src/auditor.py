@@ -5,12 +5,13 @@ from typing import Optional
 import bolt11
 import random
 from cashu.wallet.wallet import Wallet
-from cashu.wallet.crud import get_lightning_invoices, bump_secret_derivation
+from cashu.wallet.crud import get_bolt11_mint_quotes, bump_secret_derivation
 from cashu.wallet.helpers import receive, deserialize_token_from_string
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from contrib.nutshell.cashu.core.base import MintQuote, MintQuoteState
 from contrib.nutshell.cashu.core.helpers import sum_proofs
 from src.models import Mint, SwapEvent
 from .database import engine
@@ -68,25 +69,28 @@ class Auditor:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(mint)
                 continue
-            mint_quotes = await get_lightning_invoices(
+            mint_quotes = await get_bolt11_mint_quotes(
                 db=wallet.db,
-                paid=False,
+                state=MintQuoteState.unpaid,
                 mint=mint.url,
             )
             # TODO: Filter invoices per mint!!!
-            for mint_quote in mint_quotes:
-                invoice = bolt11.decode(mint_quote.bolt11)
+            for i, mint_quote in enumerate(mint_quotes):
+                logger.info(
+                    f"Checking mint quote: {mint_quote} ({i+1}/{len(mint_quotes)})"
+                )
                 if mint_quote.amount < 0 or mint_quote.paid:
                     continue
                 logger.info(f"Checking unpaid mint quote: {mint_quote}")
-                await asyncio.sleep(10)
+                await asyncio.sleep(1)
                 try:
                     proofs = await wallet.mint(mint_quote.amount, mint_quote.id)
+                    logger.info(f"Minted {sum_proofs(proofs)} sats on {mint.url}")
                     await self.bump_mint_n_mints(mint)
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
                     await self.recover_errors(wallet, e)
-                    # await self.bump_mint_errors(mint)
+                    await self.bump_mint_errors(mint)
 
     async def check_proofs(self, wallet: Wallet):
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
@@ -153,12 +157,12 @@ class Auditor:
             if not mint_in_session:
                 raise ValueError(f"Mint with ID {mint.id} not found.")
             mint_in_session.balance = new_balance
+            # Update the original mint object
+            logger.info(
+                f"Updated balance for mint {mint_in_session.url} to {mint_in_session.balance} sat."
+            )
             await session.commit()
             session.expunge(mint_in_session)
-        # Update the original mint object
-        mint.balance = new_balance
-        logger.info(f"Updated balance for mint {mint.url} to {mint.balance} sat.")
-        return mint
 
     async def update_all_mint_infos(self):
         async with AsyncSession(engine) as session:
@@ -191,24 +195,24 @@ class Auditor:
             else:
                 logger.error(f"Mint with URL {wallet.url} not found.")
 
-    async def bump_mint_errors(self, mint: Mint):
+    async def bump_mint_errors(self, mint_id: int):
         async with AsyncSession(engine) as session:
-            result = await session.execute(select(Mint).where(Mint.id == mint.id))
+            result = await session.execute(select(Mint).where(Mint.id == mint_id))
             mint_in_session = result.scalars().first()
             if mint_in_session:
                 previous_n_errors = mint_in_session.n_errors
                 mint_in_session.n_errors += 1
                 mint_in_session.state = MintState.ERROR.value
+
+                # Update the original mint object
+                logger.debug(
+                    f"Bumping n_errors for {mint_in_session.url} from {previous_n_errors} to {mint_in_session.n_errors}"
+                )
+
                 await session.commit()
                 session.expunge(mint_in_session)
-                # Update the original mint object
-                mint.n_errors = mint_in_session.n_errors
-                mint.state = mint_in_session.state
-                logger.debug(
-                    f"Bumping n_errors for {mint.url} from {previous_n_errors} to {mint.n_errors}"
-                )
             else:
-                logger.error(f"Mint with ID {mint.id} not found.")
+                logger.error(f"Mint with ID {mint_in_session.id} not found.")
 
     async def bump_mint_n_mints(self, mint: Mint):
         async with AsyncSession(engine, expire_on_commit=False) as session:
@@ -364,7 +368,7 @@ class Auditor:
                 await self.update_wallet_mint_info(to_wallet)
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
-                await self.bump_mint_errors(to_mint)
+                await self.bump_mint_errors(to_mint.id)
                 raise e
 
             from_mint, amount = await self.choose_from_mint_and_amount(to_mint)
@@ -375,25 +379,28 @@ class Auditor:
                 await self.update_wallet_mint_info(from_wallet)
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
-                await self.bump_mint_errors(from_mint)
+                await self.bump_mint_errors(from_mint.id)
                 raise e
 
             logger.info(
                 f"Swapping from {from_mint.url} to {to_mint.url} amount: {amount} sat"
             )
 
+            await self.update_mint_balance(from_mint)
+            await self.update_mint_balance(to_mint)
+
             try:
                 invoice = await to_wallet.mint_quote(amount)
             except Exception as e:
                 logger.error(f"Error getting invoice: {e}")
-                await self.bump_mint_errors(to_mint)
+                await self.bump_mint_errors(to_mint.id)
                 raise e
 
             try:
                 melt_quote = await from_wallet.melt_quote(invoice.bolt11)
             except Exception as e:
                 logger.error(f"Error getting melt quote: {e}")
-                await self.bump_mint_errors(from_mint)
+                await self.bump_mint_errors(from_mint.id)
                 await self.store_swap_event(
                     from_mint,
                     to_mint,
@@ -460,7 +467,7 @@ class Auditor:
                     if this_error:
                         logger.info("Not storing this event as a failure.")
                         raise Exception("Error melting and minting.")
-                    await self.bump_mint_errors(from_mint)
+                    await self.bump_mint_errors(from_mint.id)
                     await self.store_swap_event(
                         from_mint,
                         to_mint,
@@ -483,7 +490,7 @@ class Auditor:
                     logger.info(f"Minted {sum_proofs(proofs)} sat to {to_mint.url}")
                 except Exception as e:
                     logger.error(f"Error minting: {e}")
-                    await self.bump_mint_errors(to_mint)
+                    await self.bump_mint_errors(to_mint.id)
                     raise e
 
             await self.update_mint_db(from_wallet)
