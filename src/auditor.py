@@ -7,6 +7,7 @@ import random
 from cashu.wallet.wallet import Wallet
 from cashu.wallet.crud import get_bolt11_mint_quotes, bump_secret_derivation
 from cashu.wallet.helpers import receive, deserialize_token_from_string
+import logging
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,10 +38,10 @@ class Auditor:
         logger.info(f"Wallet initialized. Balance: {self.wallet.available_balance}")
 
         await self.update_all_balances()
-        asyncio.create_task(self.monitor_swap_task())
+        # asyncio.create_task(self.monitor_swap_task())
 
         # asyncio.create_task(self.update_balances_task())
-        # asyncio.create_task(self.mint_outstanding())
+        asyncio.create_task(self.mint_outstanding())
         # asyncio.create_task(self.update_all_mint_infos())
 
     async def monitor_swap_task(self):
@@ -74,6 +75,7 @@ class Auditor:
                 state=MintQuoteState.unpaid,
                 mint=mint.url,
             )
+            logging.info(f"Found {len(mint_quotes)} unpaid mint quotes.")
             # TODO: Filter invoices per mint!!!
             for i, mint_quote in enumerate(mint_quotes):
                 logger.info(
