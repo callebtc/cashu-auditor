@@ -62,6 +62,13 @@ class Auditor:
         # load all wallets and get mint quotes that are outstanding
         for mint in mints:
             wallet = await Wallet.with_db(mint.url, ".")
+            mint_quotes = await get_bolt11_mint_quotes(
+                db=wallet.db,
+                state=MintQuoteState.unpaid,
+                mint=mint.url,
+            )
+            if not mint_quotes:
+                continue
             await wallet.load_proofs(reload=True)
             try:
                 logger.info(f"Loading mint: {mint.url}")
@@ -70,11 +77,6 @@ class Auditor:
                 logger.error(f"Error loading mint: {e}")
                 await self.bump_mint_errors(mint)
                 continue
-            mint_quotes = await get_bolt11_mint_quotes(
-                db=wallet.db,
-                state=MintQuoteState.unpaid,
-                mint=mint.url,
-            )
             logging.info(f"Found {len(mint_quotes)} unpaid mint quotes.")
             # TODO: Filter invoices per mint!!!
             for i, mint_quote in enumerate(mint_quotes):
