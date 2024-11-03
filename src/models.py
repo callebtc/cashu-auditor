@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, func
+from sqlalchemy import Column, DateTime, Integer, String, func, ForeignKey
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -25,10 +25,10 @@ class SwapEvent(Base):
     __tablename__ = "swaps"
 
     id = Column(Integer, primary_key=True, index=True)
-    from_id = Column(Integer, foreign_key="mints.id")
-    to_id = Column(Integer, foreign_key="mints.id")
-    from_url = Column(String, foreign_key="mints.url")
-    to_url = Column(String, foreign_key="mints.url")
+    from_id = Column(Integer, ForeignKey("mints.id"))
+    to_id = Column(Integer, ForeignKey("mints.id"))
+    from_url = Column(String, ForeignKey("mints.url"))
+    to_url = Column(String, ForeignKey("mints.url"))
     amount = Column(Integer)
     fee = Column(Integer)
     created_at = Column(DateTime, default=func.now())

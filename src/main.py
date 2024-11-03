@@ -39,9 +39,6 @@ async def startup():
     """
     configure_logger()
 
-    async with engine.begin() as conn:
-        await conn.run_sync(models.Base.metadata.create_all)
-
     os.chdir("src")
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
