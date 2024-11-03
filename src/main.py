@@ -77,6 +77,7 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
             info=json.dumps(auditor.wallet.mint_info.dict()),
             balance=auditor.wallet.available_balance,
             sum_donations=auditor.wallet.available_balance,
+            updated_at=datetime.utcnow(),
             next_update=datetime.utcnow() + timedelta(minutes=1),
             state=schemas.MintState.UNKNOWN.value,
             n_errors=0,
