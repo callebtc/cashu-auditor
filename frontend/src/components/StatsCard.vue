@@ -3,11 +3,6 @@
 <template>
   <div class="q-pa-md">
     <q-card flat class="bg-dark text-white">
-      <!-- Card Header -->
-      <!-- <q-card-section>
-        <div class="text-h6">Statistics</div>
-      </q-card-section> -->
-
       <q-separator />
 
       <!-- Card Content: Statistic Cards arranged horizontally -->
