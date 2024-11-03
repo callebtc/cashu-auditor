@@ -101,7 +101,7 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
 
     except Exception as e:
         logger.error(f"Error in receive_token: {e}")
-        await db.rollback()  # Rollback the transaction to maintain session integrity
+        await db.rollback()
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
