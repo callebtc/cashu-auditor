@@ -47,3 +47,13 @@ export interface MintGraph {
   nodes: MintRead[];
   edges: MintGraphEdge[];
 }
+
+export interface MintStats {
+  total_balance: number;
+  total_swaps: number;
+  total_swaps_24h: number;
+  total_amount_swapped: number;
+  total_amount_swapped_24h: number;
+  average_swap_time: number;
+  average_swap_time_24h: number;
+}

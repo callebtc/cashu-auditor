@@ -9,7 +9,7 @@ from cashu.wallet.helpers import deserialize_token_from_string
 from cashu.core.base import Token
 from fastapi import Depends, FastAPI, HTTPException, status
 from loguru import logger
-from sqlalchemy import select, desc, asc
+from sqlalchemy import select, desc, asc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -206,3 +206,62 @@ async def read_mint_graph(db: AsyncSession = Depends(get_db)):
             }
     edges_list = list(edges.values())
     return schemas.MintGraph(nodes=mints, edges=edges_list)
+
+
+@app.get("/stats/", response_model=schemas.MintStats)
+async def get_service_stats(db: AsyncSession = Depends(get_db)):
+    """Endpoint to retrieve service statistics."""
+    try:
+        # Total balance
+        result = await db.execute(select(func.sum(models.Mint.balance)))
+        total_balance = result.scalar() or 0
+
+        # Total swaps
+        result = await db.execute(select(func.count(models.SwapEvent.id)))
+        total_swaps = result.scalar() or 0
+
+        # Swaps in the last 24 hours
+        last_24h = datetime.utcnow() - timedelta(hours=24)
+        result = await db.execute(
+            select(func.count(models.SwapEvent.id)).where(
+                models.SwapEvent.created_at >= last_24h
+            )
+        )
+        total_swaps_24h = result.scalar() or 0
+
+        # Total amount swapped
+        result = await db.execute(select(func.sum(models.SwapEvent.amount)))
+        total_amount_swapped = result.scalar() or 0
+
+        # Amount swapped in the last 24 hours
+        result = await db.execute(
+            select(func.sum(models.SwapEvent.amount)).where(
+                models.SwapEvent.created_at >= last_24h
+            )
+        )
+        total_amount_swapped_24h = result.scalar() or 0
+
+        # Average swap time
+        result = await db.execute(select(func.avg(models.SwapEvent.time_taken)))
+        average_swap_time = result.scalar() or 0
+
+        # Average swap time in the last 24 hours
+        result = await db.execute(
+            select(func.avg(models.SwapEvent.time_taken)).where(
+                models.SwapEvent.created_at >= last_24h
+            )
+        )
+        average_swap_time_24h = result.scalar() or 0
+
+        return schemas.MintStats(
+            total_balance=total_balance,
+            total_swaps=total_swaps,
+            total_swaps_24h=total_swaps_24h,
+            total_amount_swapped=total_amount_swapped,
+            total_amount_swapped_24h=total_amount_swapped_24h,
+            average_swap_time=average_swap_time,
+            average_swap_time_24h=average_swap_time_24h,
+        )
+    except Exception as e:
+        logger.error(f"Error fetching service statistics: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")

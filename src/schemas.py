@@ -64,3 +64,13 @@ class MintGraphEdge(BaseModel):
 class MintGraph(BaseModel):
     nodes: list[MintRead]
     edges: list[MintGraphEdge]
+
+
+class MintStats(BaseModel):
+    total_balance: int
+    total_swaps: int
+    total_swaps_24h: int
+    total_amount_swapped: int
+    total_amount_swapped_24h: int
+    average_swap_time: float
+    average_swap_time_24h: float

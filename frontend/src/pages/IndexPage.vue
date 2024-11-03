@@ -5,6 +5,7 @@
       Donate ecash from any Cashu mint so it can be audited perpetually. This app sends random Lightning payments between mints. Forever. The sats go in a circle until all is lost to fees or rugs. If a mint fails to pay an invoice, it is marked with a scary red label.
     </p>
   </div>
+  <StatsCard />
   <MintList />
   <MintGraph />
   <SwapList />
@@ -15,6 +16,7 @@ import { defineComponent } from 'vue';
 import MintList from 'components/MintList.vue';
 import SwapList from 'components/SwapList.vue';
 import MintGraph from 'components/MintGraph.vue';
+import StatsCard from 'components/StatsCard.vue';
 
 export default defineComponent({
   name: 'IndexPage',
@@ -22,6 +24,7 @@ export default defineComponent({
     MintList,
     SwapList,
     MintGraph,
+    StatsCard,
   },
 });
 </script>

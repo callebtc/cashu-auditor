@@ -16,7 +16,7 @@
         @keyup.enter="submitToken"
       >
         <template v-slot:append>
-          <q-btn color="primary" @click="submitToken" ><q-spinner v-if="loading" size="15px" class="q-mr-sm" color="white" />Submit</q-btn>
+          <q-btn color="primary" @click="submitToken" ><q-spinner v-if="submittingToken" size="15px" class="q-mr-sm" color="white" />Submit</q-btn>
         </template>
       </q-input>
     </div>
@@ -77,6 +77,7 @@ export default defineComponent({
     const token = ref('');
     const mints = ref<MintRead[]>([]);
     const loading = ref(false);
+    const submittingToken = ref(false);
     const error = ref('');
 
     const columns = [
@@ -116,7 +117,7 @@ export default defineComponent({
 
     const submitToken = async () => {
       if (!token.value) return;
-      loading.value = true;
+      submittingToken.value = true;
       error.value = '';
       try {
         await createMint({ token: token.value });
@@ -126,7 +127,7 @@ export default defineComponent({
         error.value = 'Error submitting token.';
         console.error(err);
       } finally {
-        loading.value = false;
+        submittingToken.value = false;
       }
     };
 
@@ -209,6 +210,7 @@ export default defineComponent({
       mints,
       columns,
       loading,
+      submittingToken,
       error,
       submitToken,
       formatDate,
