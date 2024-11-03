@@ -58,37 +58,51 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
         received = await auditor.receive_token(token)
         logger.success(f"Received {received} units.")
     except Exception as e:
-        logger.error(f"Error while receiving token: {e}")
-        raise e
-    token_obj: Token = deserialize_token_from_string(token)
-    mint_url = token_obj.mint.rstrip("/")
-    # load mint form db with token_obj.mint (URL)
-    result = await db.execute(select(models.Mint).where((models.Mint.url == mint_url)))
-    mint = result.scalars().first()
-    if mint:
-        mint.balance = auditor.wallet.available_balance
-        mint.sum_donations += received
-        mint.next_update = datetime.utcnow() + timedelta(minutes=1)
-        mint.info = json.dumps(auditor.wallet.mint_info.dict())
-    else:
-        mint = models.Mint(
-            name=auditor.wallet.mint_info.name,
-            url=mint_url,
-            info=json.dumps(auditor.wallet.mint_info.dict()),
-            balance=auditor.wallet.available_balance,
-            sum_donations=auditor.wallet.available_balance,
-            updated_at=datetime.utcnow(),
-            next_update=datetime.utcnow() + timedelta(minutes=1),
-            state=schemas.MintState.UNKNOWN.value,
-            n_errors=0,
-            n_mints=0,
-            n_melts=0,
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not receive token: {e}",
         )
-        db.add(mint)
-    await db.commit()
-    await db.refresh(mint)
-    await db.expunge(mint)
-    return mint
+    try:
+        token_obj: Token = deserialize_token_from_string(token)
+        mint_url = token_obj.mint.rstrip("/")
+        result = await db.execute(
+            select(models.Mint).where(models.Mint.url == mint_url)
+        )
+        mint = result.scalars().first()
+
+        if mint:
+            # Update Existing Mint
+            mint.balance = auditor.wallet.available_balance
+            mint.sum_donations += received
+            mint.next_update = datetime.utcnow() + timedelta(minutes=1)
+            mint.info = json.dumps(auditor.wallet.mint_info.dict())
+        else:
+            # Create New Mint
+            mint = models.Mint(
+                name=auditor.wallet.mint_info.name,
+                url=mint_url,
+                info=json.dumps(auditor.wallet.mint_info.dict()),
+                balance=auditor.wallet.available_balance,
+                sum_donations=auditor.wallet.available_balance,
+                updated_at=datetime.utcnow(),
+                next_update=datetime.utcnow() + timedelta(minutes=1),
+                state=schemas.MintState.UNKNOWN.value,
+                n_errors=0,
+                n_mints=0,
+                n_melts=0,
+            )
+            db.add(mint)
+
+        await db.commit()
+        await db.refresh(mint)
+        db.expunge(mint)
+
+        return mint
+
+    except Exception as e:
+        logger.error(f"Error in receive_token: {e}")
+        await db.rollback()  # Rollback the transaction to maintain session integrity
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @app.post(
