@@ -1,9 +1,8 @@
-from curses import OK
 from datetime import datetime
-from enum import Enum, auto
+from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, AnyUrl
 
 
 class MintState(Enum):
@@ -19,7 +18,7 @@ class ChargeRequest(BaseModel):
 
 class MintRead(BaseModel):
     id: int
-    url: HttpUrl
+    url: AnyUrl
     info: Optional[str] = None
     name: str
     balance: int
@@ -39,8 +38,8 @@ class SwapEventRead(BaseModel):
     id: int
     from_id: int
     to_id: int
-    from_url: HttpUrl
-    to_url: HttpUrl
+    from_url: AnyUrl
+    to_url: AnyUrl
     amount: int
     fee: int
     created_at: datetime
