@@ -10,7 +10,7 @@ class Mint(Base):
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String(512), unique=True)
     info = Column(String(10_000), nullable=True)
-    name = Column(String(50), unique=True)
+    name = Column(String(50))
     balance = Column(Integer)
     sum_donations = Column(Integer)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
