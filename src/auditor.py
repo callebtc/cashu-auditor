@@ -17,10 +17,11 @@ from .database import engine
 from .schemas import MintState
 from .helpers import sanitize_err
 
-SWAP_DELAY = 5 * 60  # seconds
+MIN_SWAP_DELAY = 5 * 60  # seconds
+MAX_SWAP_DELAY = 15 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
-MAXIMUM_AMOUNT = 21  # satoshis
+MAXIMUM_AMOUNT = 100  # satoshis
 
 
 class Auditor:
@@ -327,8 +328,7 @@ class Auditor:
         max_receivable = to_mint.sum_donations - to_mint.balance
         max_receivable = max(max_receivable, MINIMUM_AMOUNT)
         max_amount = min(max_receivable, mint_max_balance.balance)
-        amount = random.randint(MINIMUM_AMOUNT, max_amount)
-        amount = min(amount, MAXIMUM_AMOUNT)
+        amount = random.randint(MINIMUM_AMOUNT, min(max_amount, MAXIMUM_AMOUNT))
 
         mints = [mint for mint in mints if mint.balance * 0.8 >= amount]
         if not mints:
@@ -363,7 +363,8 @@ class Auditor:
 
     async def swap_task(self):
         while True:
-            await asyncio.sleep(SWAP_DELAY)
+            swap_delay = random.randint(MIN_SWAP_DELAY, MAX_SWAP_DELAY)
+            await asyncio.sleep(swap_delay)
 
             to_mint = await self.choose_to_mint()
             to_wallet = await Wallet.with_db(to_mint.url, ".")
