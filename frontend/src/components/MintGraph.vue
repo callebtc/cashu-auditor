@@ -103,8 +103,8 @@ export default defineComponent({
         .attr('refX', 25) // Adjust based on link distance
         .attr('refY', 0)
         .attr('orient', 'auto')
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
+        .attr('markerWidth', 2)
+        .attr('markerHeight', 2)
         .attr('xoverflow', 'visible')
         .append('svg:path')
         .attr('d', 'M 0,-5 L 10,0 L 0,5') // Arrow shape
@@ -118,7 +118,7 @@ export default defineComponent({
           .force('link', d3.forceLink<GraphNode, GraphLink>(links)
           .id((d) => d.id.toString())
           .distance(250)
-          .strength((d) => Math.sqrt(d.count) / 100)
+          .strength((d) => Math.log(d.count) / 1000)
         )
         .force('charge', d3.forceManyBody().strength(-200))
         .force('center', d3.forceCenter(width / 2, height / 2))
@@ -131,9 +131,9 @@ export default defineComponent({
         .selectAll('path')
         .data(links)
         .enter().append('path')
-        .attr('stroke-width', (d) => Math.sqrt(d.count))
+        .attr('stroke-width', (d) => Math.log(d.count)/2)
         .attr('stroke', (d) => d.state === 'OK' ? '#7b7' : '#a66')
-        .attr('stroke-opacity', 0.5)
+        .attr('stroke-opacity', 0.4)
         .attr('fill', 'none')
         .attr('marker-end', 'url(#arrowhead)') // Attach the marker to the end of the path
         // Tooltip events for edges
