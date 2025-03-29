@@ -6,6 +6,7 @@ import random
 from cashu.wallet.wallet import Wallet
 from cashu.wallet.crud import get_bolt11_mint_quotes, bump_secret_derivation
 from cashu.wallet.helpers import receive, deserialize_token_from_string
+from cashu.core.models import ProofState
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -300,7 +301,13 @@ class Auditor:
             result = await session.execute(select(Mint))
             mints = result.scalars().all()
             session.expunge_all()  # Detach mints before session closes
-        mints = [mint for mint in mints if mint.state == MintState.OK.value]
+
+        min_balance_threshold = 100
+        mints = [
+            mint
+            for mint in mints
+            if mint.state == MintState.OK.value or mint.balance < min_balance_threshold
+        ]
         mints = [mint for mint in mints if mint.balance < mint.sum_donations]
         if not mints:
             raise ValueError("No suitable mints found.")
@@ -464,12 +471,27 @@ class Auditor:
                         await asyncio.sleep(5)
                         proofs = await to_wallet.mint(amount, mint_quote.quote)
                         mint_worked = True
+                        logger.success("Mint worked.")
                     except Exception as e2:
                         logger.error(f"Error minting: {e2}")
                         pass
 
                 if not mint_worked:
-                    await from_wallet.set_reserved(send_proofs, reserved=False)
+                    logger.info("Mint did not work.Checking proof states.")
+                    spent_proofs = []
+                    unspent_proofs = []
+                    proof_states = await from_wallet.check_proof_state(send_proofs)
+                    for j, state in enumerate(proof_states.states):
+                        if state == ProofState.spent:
+                            spent_proofs.append(send_proofs[j])
+                        elif state == ProofState.unspent:
+                            unspent_proofs.append(send_proofs[j])
+
+                    logger.info(f"Unspent proofs: {len(unspent_proofs)}")
+                    logger.info(f"Spent proofs: {len(spent_proofs)}")
+                    await from_wallet.set_reserved(unspent_proofs, reserved=False)
+                    await from_wallet.invalidate(spent_proofs)
+
                     if this_error:
                         logger.info("Not storing this event as a failure.")
                         raise Exception("Error melting and minting.")
