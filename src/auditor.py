@@ -42,7 +42,7 @@ class Auditor:
 
         # asyncio.create_task(self.update_balances_task())
         # asyncio.create_task(self.mint_outstanding())
-        # asyncio.create_task(self.update_all_mint_infos())
+        asyncio.create_task(self.update_all_mint_infos())
 
     async def monitor_swap_task(self):
         while True:
