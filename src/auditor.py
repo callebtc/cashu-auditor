@@ -42,7 +42,7 @@ class Auditor:
 
         # asyncio.create_task(self.update_balances_task())
         # asyncio.create_task(self.mint_outstanding())
-        # asyncio.create_task(self.update_all_mint_infos())
+        asyncio.create_task(self.update_all_mint_infos())
 
     async def monitor_swap_task(self):
         while True:
@@ -183,14 +183,14 @@ class Auditor:
                 wallet = await Wallet.with_db(mint.url, ".")
                 await wallet.load_mint()
                 mint.info = json.dumps(wallet.mint_info.dict())
+                mint.name = wallet.mint_info.name
+                # update mint info in database
+                async with AsyncSession(engine) as session:
+                    session.add(mint)
+                    await session.commit()
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
                 continue
-        # Now update the mints in the database
-        async with AsyncSession(engine) as session:
-            for mint in mints:
-                session.add(mint)
-            await session.commit()
 
     async def update_wallet_mint_info(self, wallet: Wallet):
         logger.info(f"Updating mint info for {wallet.url}")
@@ -199,6 +199,7 @@ class Auditor:
             mint = result.scalars().first()
             if mint:
                 mint.info = json.dumps(wallet.mint_info.dict())
+                mint.name = wallet.mint_info.name
                 logger.debug(f"Updated mint info for {wallet.url}: {mint.info}")
                 await session.commit()
             else:
