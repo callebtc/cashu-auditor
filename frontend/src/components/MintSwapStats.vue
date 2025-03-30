@@ -33,7 +33,7 @@
 
       <q-card-section>
         <div class="text-h6 q-mb-md">Recent Swaps</div>
-        <q-list bordered separator class="scroll" style="max-height: 400px">
+        <q-list bordered separator class="scroll" style="max-height: 400px" ref="swapList">
           <q-item v-for="swap in swaps" :key="swap.id" class="q-py-md">
             <q-item-section>
               <q-item-label>
@@ -62,7 +62,7 @@
               />
             </q-item-section>
           </q-item>
-          <q-item v-if="!allLoaded && !loadingMore" class="q-pa-md">
+          <q-item  class="q-pa-md">
             <q-item-section class="q-flex justify-center">
               <q-item-label class="text-center">
                 <q-btn
@@ -71,14 +71,14 @@
                   color="primary"
                   @click="loadMoreSwaps"
                   :disabled="loadingMore"
+                  :loading="loadingMore"
                 />
               </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
 
-        <!-- Loading Spinner -->
-        <q-spinner v-if="loadingMore" color="primary" size="50px" class="q-my-md" />
+
 
         <!-- No More Swaps Message -->
         <div v-if="allLoaded && swaps.length > 0" class="text-secondary q-pa-md">
@@ -99,7 +99,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted, watch, nextTick } from 'vue';
 import { MintRead, SwapEventRead } from 'src/models/mint';
 import { getMintSwaps } from 'src/services/mintService';
 
@@ -123,6 +123,7 @@ export default defineComponent({
     const skip = ref(0);
     const limit = 10;
     const allLoaded = ref(false);
+    const swapList = ref<HTMLElement | null>(null);
 
     const show = computed({
       get: () => props.modelValue,
@@ -191,7 +192,18 @@ export default defineComponent({
 
     const loadMoreSwaps = async () => {
       if (allLoaded.value || loadingMore.value) return;
+
+      // Store current scroll position
+      const scrollPosition = swapList.value?.scrollTop || 0;
+
       await fetchSwaps('more');
+
+      // After the DOM updates, restore scroll position
+      nextTick(() => {
+        if (swapList.value) {
+          swapList.value.scrollTop = scrollPosition;
+        }
+      });
     };
 
     const formatTime = (milliseconds: number) => {
@@ -258,6 +270,7 @@ export default defineComponent({
     });
 
     return {
+      swapList,
       show,
       swaps,
       loadingInitial,
