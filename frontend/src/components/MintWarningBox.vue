@@ -47,11 +47,15 @@ export default defineComponent({
     },
     successRateThreshold: {
       type: Number,
-      default: 75
+      default: 85
     },
     slowMintThresholdMs: {
       type: Number,
       default: 5000 // 5 seconds in milliseconds
+    },
+    requiredSuccessfulSwaps: {
+      type: Number,
+      default: 7
     }
   },
   setup(props) {
@@ -63,26 +67,28 @@ export default defineComponent({
         messages.push("Could not reach mint. Mint might be offline.");
       }
 
+      // Get recent swaps for reuse in multiple conditions
+      const now = new Date();
+      const recentSwaps = props.swaps.filter(swap => {
+        const swapDate = new Date(swap.created_at);
+        const daysDifference = (now.getTime() - swapDate.getTime()) / (1000 * 60 * 60 * 24);
+        return daysDifference <= props.recentDaysThreshold;
+      });
+
+      const successfulRecentSwaps = recentSwaps.filter(swap => swap.state === 'OK');
+      const recentSuccessRate = recentSwaps.length > 0
+        ? (successfulRecentSwaps.length / recentSwaps.length) * 100
+        : 0;
+
       // Check mint state
       if (props.mint.state === 'WARN' || props.mint.state === 'ERROR') {
         const baseMessage = `The auditor determined the mint's last state as ${props.mint.state === 'WARN' ? 'dangerous' : 'disfunctional'}.`;
 
-        // Check recent swap success rate
-        const now = new Date();
-        const recentSwaps = props.swaps.filter(swap => {
-          const swapDate = new Date(swap.created_at);
-          const daysDifference = (now.getTime() - swapDate.getTime()) / (1000 * 60 * 60 * 24);
-          return daysDifference <= props.recentDaysThreshold;
-        });
-
         if (recentSwaps.length > 0) {
-          const successfulRecentSwaps = recentSwaps.filter(swap => swap.state === 'OK');
-          const successRate = (successfulRecentSwaps.length / recentSwaps.length) * 100;
-
           let successMessage = `${successfulRecentSwaps.length} of ${recentSwaps.length} swaps in the last ${props.recentDaysThreshold} days succeeded.`;
 
           // Add "However, " prefix if success rate is above threshold
-          if (successRate >= props.successRateThreshold) {
+          if (recentSuccessRate >= props.successRateThreshold) {
             messages.push(`${baseMessage} However, ${successMessage}`);
           } else {
             messages.push(`${baseMessage} ${successMessage}`);
@@ -92,6 +98,24 @@ export default defineComponent({
         }
       } else if (props.mint.state === 'UNKNOWN') {
         messages.push("The auditor was not able to determine whether this mint works.");
+      } else if (props.mint.state === 'OK') {
+        // Add warnings for OK state mints with not enough successful swaps or low success rate
+        const warningsNeeded = [];
+
+        // Check for not enough successful swaps
+        if (successfulRecentSwaps.length < props.requiredSuccessfulSwaps) {
+          warningsNeeded.push(`This mint only had ${successfulRecentSwaps.length} successful ${successfulRecentSwaps.length === 1 ? 'swap' : 'swaps'} in the last ${props.recentDaysThreshold} days.`);
+        }
+
+        // Check for low success rate
+        if (recentSwaps.length > 0 && recentSuccessRate < props.successRateThreshold) {
+          warningsNeeded.push(`This success rate was ${Math.round(recentSuccessRate)}% in the last ${props.recentDaysThreshold} days, below the recommended ${props.successRateThreshold}%.`);
+        }
+
+        // Add combined message if both issues exist
+        if (warningsNeeded.length > 0) {
+          messages.push(...warningsNeeded);
+        }
       }
 
       // Check last successful swap

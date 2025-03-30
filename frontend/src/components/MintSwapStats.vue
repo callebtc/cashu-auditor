@@ -20,7 +20,7 @@
         </q-avatar>
       </q-card-section>
       <!-- mint url (centered and monospace) with copy button  -->
-      <q-card-section class="row justify-center q-pb-xl q-pt-none">
+      <q-card-section class="row justify-center q-py-sm">
         <div class="text-center text-wrap" style="font-family: monospace;">{{ mint.url }}</div>
         <q-btn
           flat
@@ -35,7 +35,7 @@
       </q-card-section>
 
       <!-- Warning Box -->
-      <q-card-section class="q-py-md">
+      <q-card-section class="q-pb-md">
         <MintWarningBox
           :mint="mint"
           :swaps="swaps"
