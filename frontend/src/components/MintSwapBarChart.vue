@@ -57,9 +57,13 @@ export default defineComponent({
       type: Array as () => SwapEventRead[],
       required: true
     },
-    maxBars: {
+    minBars: {
       type: Number,
-      default: 40
+      default: 30
+    },
+    maxPossibleBars: {
+      type: Number,
+      default: 200
     },
     barSpacing: {
       type: Number,
@@ -83,15 +87,36 @@ export default defineComponent({
     const spacing = computed(() => props.barSpacing);
     const minBarWidth = computed(() => props.minBarWidth);
 
+    // Calculate responsive maxBars based on container width
+    const maxBars = computed(() => {
+      if (containerWidth.value <= 0) return props.minBars;
+
+      // Scale maxBars based on container width
+      // For small screens (e.g., width < 600px), use minBars
+      // For large screens, scale up to maxPossibleBars
+      const minWidth = 400; // Width for minimum bars
+      const maxWidth = 2600; // Width for maximum bars
+
+      if (containerWidth.value <= minWidth) {
+        return props.minBars;
+      } else if (containerWidth.value >= maxWidth) {
+        return props.maxPossibleBars;
+      } else {
+        // Linear interpolation between minBars and maxPossibleBars
+        const widthRatio = (containerWidth.value - minWidth) / (maxWidth - minWidth);
+        return Math.floor(props.minBars + widthRatio * (props.maxPossibleBars - props.minBars));
+      }
+    });
+
     const barsCount = computed(() => {
-      if (containerWidth.value <= 0) return props.maxBars;
+      if (containerWidth.value <= 0) return maxBars.value;
 
       // Calculate how many bars can fit with the given spacing
       // Formula: (containerWidth + barSpacing) / (minBarWidth + barSpacing)
       const maxPossibleBars = Math.floor((containerWidth.value + spacing.value) / (minBarWidth.value + spacing.value));
 
-      // Limit to maxBars prop
-      return Math.min(maxPossibleBars, props.maxBars);
+      // Limit to maxBars computed value
+      return Math.min(maxPossibleBars, maxBars.value);
     });
 
     const barWidth = computed(() => {
@@ -355,6 +380,7 @@ export default defineComponent({
       barsCount,
       barWidth,
       spacing,
+      maxBars,
       formatTime,
       formatDate,
       showBucketTooltip,
