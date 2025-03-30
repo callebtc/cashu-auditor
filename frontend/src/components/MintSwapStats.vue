@@ -19,6 +19,7 @@
         />
         </q-avatar>
       </q-card-section>
+      <!-- statistics -->
       <q-card-section class="q-py-none">
         <div class="row q-col-gutter-md q-px-md" style="flex-wrap: nowrap;">
           <!-- Success Rate Card -->
@@ -44,6 +45,12 @@
         </div>
       </q-card-section>
 
+      <!-- Bar Chart -->
+      <q-card-section class="q-py-none">
+        <MintSwapBarChart :swaps="swaps" />
+      </q-card-section>
+
+      <!-- recent swaps -->
       <q-card-section>
         <div class="text-h6 q-mb-md">Recent Swaps</div>
         <q-list bordered separator class="scroll" style="max-height: 400px" ref="swapList">
@@ -112,9 +119,13 @@
 import { defineComponent, ref, computed, onMounted, watch, nextTick } from 'vue';
 import { MintRead, SwapEventRead } from 'src/models/mint';
 import { getMintSwaps } from 'src/services/mintService';
+import MintSwapBarChart from './MintSwapBarChart.vue';
 
 export default defineComponent({
   name: 'MintSwapStats',
+  components: {
+    MintSwapBarChart
+  },
   props: {
     modelValue: {
       type: Boolean,
