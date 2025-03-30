@@ -448,9 +448,12 @@ class Auditor:
             mint_worked = False
             try:
                 # if the fee reserve is more than 2% of the amount, we throw an error
-                if melt_quote.fee_reserve > amount * MAX_FEE_RESERVE_PERCENT / 100:
+                if (
+                    melt_quote.fee_reserve > amount * MAX_FEE_RESERVE_PERCENT / 100
+                    or total_amount > amount * (1 + MAX_FEE_RESERVE_PERCENT / 100)
+                ):
                     raise Exception(
-                        f"Fee reserve of {melt_quote.fee_reserve/amount*100}% is too high."
+                        f"Fee reserve of {melt_quote.fee_reserve/amount*100}% is too high. Mint wants to charge {total_amount} sat for invoice of {amount} sat."
                     )
                 time_start = time.time()
                 await from_wallet.melt(
