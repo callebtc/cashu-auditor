@@ -153,5 +153,17 @@ export default defineComponent({
   background-color: #1e1e1e; /* Dark background for the card */
   color: white;
   min-height: 115px;
+  display: flex;  /* Added to ensure content fills height */
+}
+
+/* Apply min-height only on screens smaller than sm breakpoint */
+@media (max-width: 600px) {
+  .stat-card {
+    min-height: 140px;
+  }
+}
+
+.stat-card .q-card-section {
+  width: 100%;  /* Added to ensure content fills width */
 }
 </style>
