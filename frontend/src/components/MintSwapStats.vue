@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="show">
-    <q-card class="bg-dark text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
+    <q-card class="bg-dark  q-pa-sm text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
       <q-card-section class="row justify-center q-pb-md">
         <div class="text-h6 q-pb-md">{{ mint.name || mint.url }}</div>
       </q-card-section>
@@ -62,18 +62,20 @@
               />
             </q-item-section>
           </q-item>
+          <q-item v-if="!allLoaded && !loadingMore" class="q-pa-md">
+            <q-item-section class="q-flex justify-center">
+              <q-item-label class="text-center">
+                <q-btn
+                  label="Load More Swaps"
+                  outline
+                  color="primary"
+                  @click="loadMoreSwaps"
+                  :disabled="loadingMore"
+                />
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
-
-        <!-- Load More Button -->
-        <div class="q-pa-md flex justify-center" v-if="!allLoaded && !loadingMore">
-          <q-btn
-            label="Load More Swaps"
-            outline
-            color="primary"
-            @click="loadMoreSwaps"
-            :disabled="loadingMore"
-          />
-        </div>
 
         <!-- Loading Spinner -->
         <q-spinner v-if="loadingMore" color="primary" size="50px" class="q-my-md" />
