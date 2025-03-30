@@ -4,11 +4,11 @@
       <q-card-actions class="close-button-container">
           <q-icon name="close" class="cursor-pointer text-white" v-close-popup/>
       </q-card-actions>
-      <q-card-section class="row justify-center q-pb-md">
+      <q-card-section class="row justify-center" :class="mintIconUrl ? 'q-pb-md' : 'q-pb-xl'">
         <div class="text-h4">{{ mint.name || mint.url }}</div>
       </q-card-section>
 
-      <q-card-section class="row justify-center q-pb-lg">
+      <q-card-section v-if="mintIconUrl" class="row justify-center q-pb-lg q-pt-none">
       <q-avatar size="75px" class="q-mb-lg">
         <q-img
           spinner-color="white"
@@ -290,6 +290,7 @@ export default defineComponent({
 
     const getMintIcon = async (mint: MintRead) => {
       try {
+        mintIconUrl.value = undefined;
         const mintInfo = await fetch(mint.url + '/v1/info');
         const info = await mintInfo.json();
         mintIconUrl.value = info.icon_url;
