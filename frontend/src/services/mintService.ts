@@ -41,3 +41,8 @@ export async function getMintSwaps(mintId: number, skip = 0, limit = 10): Promis
   const response = await api.get(`/swaps/mint/${mintId}?skip=${skip}&limit=${limit}`);
   return response.data;
 }
+
+export async function getPaymentRequest(): Promise<string> {
+  const response = await api.get<string>('/pr');
+  return response.data;
+}
