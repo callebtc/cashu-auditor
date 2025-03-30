@@ -321,8 +321,10 @@ export default defineComponent({
 .bar-chart-container {
   background-color: #1e1e1e;
   border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
+  padding-bottom: 6px;
+  padding-top: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   position: relative;
 }
 
@@ -333,18 +335,18 @@ export default defineComponent({
 
 .chart-wrapper {
   position: relative;
-  height: 100px;
+  height: 65px;
 }
 
 .bars-container {
   display: flex;
   align-items: flex-end;
-  height: 80px;
+  height: 40px;
   background-color: #2d2d2d;
   border-radius: 4px;
   padding: 4px;
   position: relative;
-   gap: 1px;
+  gap: 1px;
 }
 
 .bar {

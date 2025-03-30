@@ -6,6 +6,7 @@
     </p>
   </div>
   <StatsCard />
+  <GlobalSwapBarChart :maxSwaps="1000" />
   <MintList />
   <MintGraph />
   <SwapList />
@@ -17,6 +18,7 @@ import MintList from 'components/MintList.vue';
 import SwapList from 'components/SwapList.vue';
 import MintGraph from 'components/MintGraph.vue';
 import StatsCard from 'components/StatsCard.vue';
+import GlobalSwapBarChart from 'components/GlobalSwapBarChart.vue';
 
 export default defineComponent({
   name: 'IndexPage',
@@ -25,6 +27,7 @@ export default defineComponent({
     SwapList,
     MintGraph,
     StatsCard,
+    GlobalSwapBarChart,
   },
 });
 </script>
