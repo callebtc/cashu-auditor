@@ -4,12 +4,12 @@
       <q-card-actions class="close-button-container">
           <q-icon name="close" class="cursor-pointer text-white" v-close-popup/>
       </q-card-actions>
-      <q-card-section class="row justify-center text-center q-px-xl" :class="mintIconUrl ? 'q-pb-md' : 'q-pb-xl'">
+      <q-card-section class="row justify-center text-center q-px-xl" :class="mintIconUrl ? 'q-pb-md' : 'q-pb-md'">
         <div class="text-h4 text-wrap">{{ mint.name || mint.url }}</div>
       </q-card-section>
 
       <q-card-section v-if="mintIconUrl" class="row justify-center q-pb-lg q-pt-none">
-      <q-avatar size="75px" class="q-mb-lg">
+      <q-avatar size="75px" class="q-mb-none">
         <q-img
           spinner-color="white"
           spinner-size="xs"
