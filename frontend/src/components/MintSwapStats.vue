@@ -1,0 +1,291 @@
+<template>
+  <q-dialog v-model="show">
+    <q-card class="bg-dark text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
+      <q-card-section class="row justify-center q-pb-md">
+        <div class="text-h6 q-pb-md">{{ mint.name || mint.url }}</div>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <div class="row q-col-gutter-md q-pl-md">
+          <!-- Success Rate Card -->
+          <q-card class="col-6 stat-card">
+            <q-card-section>
+              <div class="text-subtitle1">Success Rate</div>
+              <div class="text-h5">{{ successRate }}%</div>
+              <div class="text-caption">
+                {{ successfulSwaps }} of {{ swaps.length }} swaps
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <!-- Average Time Card -->
+          <q-card class="col-6 stat-card">
+            <q-card-section>
+              <div class="text-subtitle1">Average Time</div>
+              <div class="text-h5">{{ formatTime(averageTime) }}</div>
+              <div class="text-caption">
+                For successful swaps
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-card-section>
+
+      <q-card-section>
+        <div class="text-h6 q-mb-md">Recent Swaps</div>
+        <q-list bordered separator class="scroll" style="max-height: 400px">
+          <q-item v-for="swap in swaps" :key="swap.id" class="q-py-md">
+            <q-item-section>
+              <q-item-label>
+                <span class="text-bold">To:</span> <span style="font-family: monospace;">{{ swap.to_url }}</span>
+              </q-item-label>
+              <q-item-label>
+                <span class="text-bold">Amount:</span> {{ swap.amount }} sat
+              </q-item-label>
+              <q-item-label>
+                <span class="text-bold">Time:</span> {{ formatDate(swap.created_at) }}
+              </q-item-label>
+              <q-item-label v-if="swap.state === 'OK'" caption>
+                <span class="text-bold">Fee:</span> {{ swap.fee }} sat
+                <q-item-label v-if="swap.time_taken" caption>
+                  Payment took {{ swap.time_taken }} ms
+                </q-item-label>
+              </q-item-label>
+              <q-item-label v-if="swap.state === 'ERROR' && swap.error" caption>
+                <span class="text-bold">Error:</span> {{ swap.error }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon
+                :name="swap.state === 'OK' ? 'check_circle' : 'cancel'"
+                :color="swap.state === 'OK' ? 'positive' : 'negative'"
+              />
+            </q-item-section>
+          </q-item>
+        </q-list>
+
+        <!-- Load More Button -->
+        <div class="q-pa-md flex justify-center" v-if="!allLoaded && !loadingMore">
+          <q-btn
+            label="Load More Swaps"
+            outline
+            color="primary"
+            @click="loadMoreSwaps"
+            :disabled="loadingMore"
+          />
+        </div>
+
+        <!-- Loading Spinner -->
+        <q-spinner v-if="loadingMore" color="primary" size="50px" class="q-my-md" />
+
+        <!-- No More Swaps Message -->
+        <div v-if="allLoaded && swaps.length > 0" class="text-secondary q-pa-md">
+          All swaps loaded.
+        </div>
+
+        <!-- No Swaps Found -->
+        <div v-if="!loadingInitial && swaps.length === 0" class="text-secondary q-pa-md">
+          No swaps found.
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Close" color="primary" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { MintRead, SwapEventRead } from 'src/models/mint';
+import { getMintSwaps } from 'src/services/mintService';
+
+export default defineComponent({
+  name: 'MintSwapStats',
+  props: {
+    modelValue: {
+      type: Boolean,
+      required: true
+    },
+    mint: {
+      type: Object as () => MintRead,
+      required: true
+    }
+  },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    const swaps = ref<SwapEventRead[]>([]);
+    const loadingInitial = ref(false);
+    const loadingMore = ref(false);
+    const skip = ref(0);
+    const limit = 10;
+    const allLoaded = ref(false);
+
+    const show = computed({
+      get: () => props.modelValue,
+      set: (value) => emit('update:modelValue', value)
+    });
+
+    // Add this watch effect after the show computed property
+    watch(show, (newValue) => {
+      if (newValue) {
+        // Reset pagination
+        skip.value = 0;
+        allLoaded.value = false;
+        // Reload data
+        fetchSwaps('initial');
+      }
+    });
+
+    const successfulSwaps = computed(() => {
+      return swaps.value.filter(swap => swap.state === 'OK').length;
+    });
+
+    const successRate = computed(() => {
+      if (swaps.value.length === 0) return 0;
+      return Math.round((successfulSwaps.value / swaps.value.length) * 100);
+    });
+
+    const averageTime = computed(() => {
+      const successfulSwapsWithTime = swaps.value.filter(swap =>
+        swap.state === 'OK' && swap.time_taken
+      );
+      if (successfulSwapsWithTime.length === 0) return 0;
+      const totalTime = successfulSwapsWithTime.reduce((sum, swap) =>
+        sum + (swap.time_taken || 0), 0
+      );
+      return totalTime / successfulSwapsWithTime.length;
+    });
+
+    const fetchSwaps = async (type: 'initial' | 'more') => {
+      if (type === 'initial') {
+        loadingInitial.value = true;
+      } else {
+        loadingMore.value = true;
+      }
+
+      try {
+        const fetchedSwaps = await getMintSwaps(props.mint.id, skip.value, limit);
+
+        if (type === 'initial') {
+          swaps.value = fetchedSwaps;
+        } else {
+          swaps.value = [...swaps.value, ...fetchedSwaps];
+        }
+
+        skip.value += limit;
+        allLoaded.value = fetchedSwaps.length < limit;
+      } catch (err) {
+        console.error('Error fetching swaps:', err);
+      } finally {
+        if (type === 'initial') {
+          loadingInitial.value = false;
+        } else {
+          loadingMore.value = false;
+        }
+      }
+    };
+
+    const loadMoreSwaps = async () => {
+      if (allLoaded.value || loadingMore.value) return;
+      await fetchSwaps('more');
+    };
+
+    const formatTime = (milliseconds: number) => {
+      if (milliseconds === 0) return 'N/A';
+      const seconds = milliseconds / 1000;
+      if (seconds < 10) {
+        return `${milliseconds.toFixed(0)} ms`;
+      } else {
+        return `${seconds.toFixed(2)} s`;
+      }
+    };
+
+    /**
+     * Formats a date string into a readable format.
+     * @param dateStr - The date string to format.
+     * @returns A localized date string.
+     */
+     const formatDate = (dateStr: string) => {
+      // Check if the dateStr already ends with 'Z' or contains timezone info
+      const hasTimezone = /([Zz]|[+\-]\d{2}:\d{2})$/.test(dateStr);
+      let utcDateStr = dateStr;
+
+      if (!hasTimezone) {
+        // Append 'Z' to indicate UTC if no timezone is present
+        utcDateStr += 'Z';
+      }
+
+      const dateObj = new Date(utcDateStr);
+      if (isNaN(dateObj.getTime())) {
+        console.error(`Invalid date string: ${dateStr}`);
+        return 'Invalid Date';
+      }
+
+      // Define options for time formatting
+      const timeOptions: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      };
+
+      // Define options for date formatting
+      const dateOptions: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      };
+
+      // Format time and date separately
+      const time = dateObj.toLocaleTimeString(undefined, timeOptions);
+      const date = dateObj.toLocaleDateString(undefined, dateOptions);
+
+      // Return in the format: <time>, <date>
+      return `${time}, ${date}`;
+    };
+
+    const getMintName = (mintId: number) => {
+      // This should be replaced with actual mint name lookup
+      return `Mint ${mintId}`;
+    };
+
+    onMounted(() => {
+      fetchSwaps('initial');
+    });
+
+    return {
+      show,
+      swaps,
+      loadingInitial,
+      loadingMore,
+      allLoaded,
+      successRate,
+      successfulSwaps,
+      averageTime,
+      formatTime,
+      getMintName,
+      loadMoreSwaps,
+      formatDate
+    };
+  }
+});
+</script>
+
+<style scoped>
+.stat-card {
+  background-color: #1e1e1e;
+  color: white;
+  min-height: 100px;
+  border-radius: 8px;
+}
+
+.rounded-borders {
+  border-radius: 12px;
+}
+
+.scroll {
+  overflow-y: auto;
+}
+</style>
