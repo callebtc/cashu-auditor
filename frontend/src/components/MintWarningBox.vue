@@ -64,7 +64,7 @@ export default defineComponent({
 
       // Check if mint info could be fetched
       if (!props.couldFetchInfo) {
-        messages.push("Could not reach mint. Mint might be offline.");
+        messages.push('We were not able to reach the mint. Mint might be offline.');
       }
 
       // Get recent swaps for reuse in multiple conditions
@@ -82,7 +82,7 @@ export default defineComponent({
 
       // Check mint state
       if (props.mint.state === 'WARN' || props.mint.state === 'ERROR') {
-        const baseMessage = `The auditor determined the mint's last state as ${props.mint.state === 'WARN' ? 'dangerous' : 'dysfunctional'}.`;
+        const baseMessage = 'This mint has recently failed to swap.';
 
         if (recentSwaps.length > 0) {
           let successMessage = `${successfulRecentSwaps.length} of ${recentSwaps.length} swaps in the last ${props.recentDaysThreshold} days succeeded.`;
@@ -97,19 +97,19 @@ export default defineComponent({
           messages.push(baseMessage);
         }
       } else if (props.mint.state === 'UNKNOWN') {
-        messages.push("The auditor was not able to determine whether this mint works.");
+        messages.push('The auditor was not able to determine the quality of this mint yet.');
       } else if (props.mint.state === 'OK') {
         // Add warnings for OK state mints with not enough successful swaps or low success rate
         const warningsNeeded = [];
 
         // Check for not enough successful swaps
         if (successfulRecentSwaps.length < props.requiredSuccessfulSwaps) {
-          warningsNeeded.push(`This mint only had ${successfulRecentSwaps.length} successful ${successfulRecentSwaps.length === 1 ? 'swap' : 'swaps'} in the last ${props.recentDaysThreshold} days.`);
+          warningsNeeded.push(`We do not have much data on this mint yet. Only ${successfulRecentSwaps.length} successful ${successfulRecentSwaps.length === 1 ? 'swap' : 'swaps'} in ${props.recentDaysThreshold} days.`);
         }
 
         // Check for low success rate
         if (recentSwaps.length > 0 && recentSuccessRate < props.successRateThreshold) {
-          warningsNeeded.push(`This success rate was ${Math.round(recentSuccessRate)}% in the last ${props.recentDaysThreshold} days, below the recommended ${props.successRateThreshold}%.`);
+          warningsNeeded.push(`This success rate was only ${Math.round(recentSuccessRate)}% in the last ${props.recentDaysThreshold} days, below the recommended ${props.successRateThreshold}%.`);
         }
 
         // Add combined message if both issues exist
@@ -128,7 +128,7 @@ export default defineComponent({
         if (daysDifference > props.inactiveThresholdDays) {
           const days = Math.floor(daysDifference);
 
-          const baseMessage = `This mint did not swap for ${days} ${days === 1 ? 'day' : 'days'}. It could be unreachable.`;
+          const baseMessage = `This mint had no swaps for ${days} ${days === 1 ? 'day' : 'days'}. It might be unreachable.`;
           messages.push(baseMessage);
         }
 
@@ -145,7 +145,7 @@ export default defineComponent({
         }
       } else if (props.swaps.length > 0) {
         // If there are swaps but none are successful
-        messages.push("No successful swaps recorded for this mint, it might be unreachable.");
+        messages.push('No successful swaps recorded for this mint. It might be unreachable.');
       }
 
       return messages;
