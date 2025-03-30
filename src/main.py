@@ -181,6 +181,7 @@ async def read_swaps_mint(
     result = await db.execute(
         select(models.SwapEvent)
         .where(models.SwapEvent.from_id == mint_id)
+        .order_by(desc(models.SwapEvent.created_at))
         .offset(skip)
         .limit(limit)
     )
