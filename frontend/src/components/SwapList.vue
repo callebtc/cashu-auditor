@@ -14,8 +14,15 @@
             />
           </q-item-section>
           <q-item-section>
+            <div class="row justify-between items-center">
+              <div class="col-auto">
+                <span class="text-bold">From:</span>
+              </div>
+              <div class="col-auto">
+                <q-item-label caption>{{ formatDate(swap.created_at) }}</q-item-label>
+              </div>
+            </div>
             <q-item-label>
-              <span class="text-bold">From:</span>
               {{ swap.from_url }}
               <q-btn
                 flat
@@ -57,9 +64,6 @@
             <q-item-label v-if="swap.state === 'ERROR' && swap.error" caption>
               <span class="text-bold" >Error:</span> {{ swap.error }}
             </q-item-label>
-          </q-item-section>
-          <q-item-section side top>
-            <q-item-label caption>{{ formatDate(swap.created_at) }}</q-item-label>
           </q-item-section>
         </q-item>
         <q-separator />
