@@ -46,7 +46,7 @@
       </q-card-section>
 
       <!-- Bar Chart -->
-      <q-card-section class="q-py-none">
+      <q-card-section v-if="swaps.length > 0" class="q-py-none">
         <MintSwapBarChart :swaps="swaps" />
       </q-card-section>
 
@@ -84,6 +84,10 @@
           </q-item>
           <q-item  class="q-pa-md">
             <q-item-section class="q-flex justify-center">
+            <!-- No Swaps Found -->
+              <div v-if="!loadingInitial && swaps.length === 0" class="text-secondary q-pa-md text-center" style="font-size: 1.2rem;">
+                No swaps found
+              </div>
               <q-item-label class="text-center">
                 <q-btn
                   label="Load More Swaps"
@@ -105,10 +109,6 @@
           All swaps loaded.
         </div>
 
-        <!-- No Swaps Found -->
-        <div v-if="!loadingInitial && swaps.length === 0" class="text-secondary q-pa-md">
-          No swaps found.
-        </div>
       </q-card-section>
 
     </q-card>
