@@ -342,8 +342,8 @@ export default defineComponent({
 
 .close-button-container {
   position: absolute;
-  top: 20px;
-  left: 8px;
+  top: 25px;
+  left: 10px;
   z-index: 1;
 }
 </style>
