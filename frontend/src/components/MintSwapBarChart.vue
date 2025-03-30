@@ -22,7 +22,10 @@
         <div v-for="(date, index) in timeTicks"
              :key="index"
              class="time-tick"
-             :style="{ left: `${(index / (timeTicks.length - 1)) * 100}%` }">
+             :style="{
+               left: `${(index / (timeTicks.length - 1)) * 100}%`,
+               display: index === timeTicks.length - 1 ? 'none' : 'block'
+             }">
           {{ formatTime(date) }}
         </div>
       </div>
@@ -59,23 +62,23 @@ export default defineComponent({
       if (props.swaps.length === 0) return [];
 
       // Use the same time range logic as in displaySwaps
-      const startTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
-      const endTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
+      const startTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
+      const endTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
 
-      const interval = (endTime - startTime) / 4; // 5 ticks (start, 3 middle, end)
+      const interval = (startTime - endTime) / 3; // 4 ticks (now, 2 middle, end)
 
-      // Generate time ticks from newest to oldest to match bar positions
-      return Array.from({ length: 5 }, (_, i) => new Date(startTime + (interval * i)));
+      // Generate time ticks from oldest to newest to match bar positions
+      return Array.from({ length: 4 }, (_, i) => new Date(endTime + (interval * i)));
     });
 
     const displaySwaps = computed(() => {
       if (props.swaps.length === 0) return Array(40).fill(null);
 
-      // Create an array of 20 slots (or however many we want to show)
+      // Create an array of 40 slots
       const slots = Array(40).fill(null);
-      const startTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap (the API returns in descending order)
-      const endTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
-      const timeRange = endTime - startTime;
+      const endTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
+      const startTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
+      const timeRange = startTime - endTime;
 
       if (timeRange === 0) {
         // If all swaps happened at the same time, just place the first one
@@ -89,9 +92,9 @@ export default defineComponent({
       props.swaps.forEach(swap => {
         const swapTime = new Date(swap.created_at).getTime();
         // Calculate index based on time position between newest and oldest
-        // We reverse the calculation to match the visual orientation (oldest on right)
-        const normalizedPosition = (swapTime - startTime) / timeRange;
-        const index = Math.floor(normalizedPosition * (slots.length - 1));
+        // Newest (latest) swaps will be on the left
+        const normalizedPosition = (swapTime - endTime) / timeRange;
+        const index = Math.floor((1 - normalizedPosition) * (slots.length - 1));
 
         if (index >= 0 && index < slots.length) {
           slots[index] = swap;
@@ -102,6 +105,14 @@ export default defineComponent({
     });
 
     const formatTime = (date: Date) => {
+      // Special case for the most recent time (leftmost tick)
+      if (props.swaps.length > 0) {
+        const latestSwapTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime();
+        if (Math.abs(date.getTime() - latestSwapTime) < 1000) { // Within 1 second
+          return "Now";
+        }
+      }
+
       const today = new Date();
       const isToday = date.toDateString() === today.toDateString();
       const isYesterday = new Date(today.setDate(today.getDate() - 1)).toDateString() === date.toDateString();
