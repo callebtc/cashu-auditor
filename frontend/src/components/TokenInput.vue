@@ -18,7 +18,7 @@
           </q-btn>
         </template>
       </q-input>
-      <div class="q-mt-md">
+      <div class="q-mt-md row justify-end">
         <q-btn color="primary" v-if="!paymentRequestString" @click="createPaymentRequest" :loading="loadingPaymentRequest">Payment Request</q-btn>
       </div>
     </div>
