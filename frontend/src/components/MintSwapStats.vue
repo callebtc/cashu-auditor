@@ -1,6 +1,9 @@
 <template>
   <q-dialog v-model="show">
     <q-card class="bg-dark q-pa-sm text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
+      <q-card-actions align="left">
+          <q-icon name="close" class="cursor-pointer text-white" v-close-popup/>
+      </q-card-actions>
       <q-card-section class="row justify-center q-pb-md">
         <div class="text-h4">{{ mint.name || mint.url }}</div>
       </q-card-section>
@@ -102,9 +105,6 @@
         </div>
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn flat label="Close" color="primary" v-close-popup />
-      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
