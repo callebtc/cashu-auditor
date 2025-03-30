@@ -1,10 +1,21 @@
 <template>
   <q-dialog v-model="show">
-    <q-card class="bg-dark  q-pa-sm text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
+    <q-card class="bg-dark q-pa-sm text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
       <q-card-section class="row justify-center q-pb-md">
-        <div class="text-h6 q-pb-md">{{ mint.name || mint.url }}</div>
+        <div class="text-h4">{{ mint.name || mint.url }}</div>
       </q-card-section>
 
+      <q-card-section class="row justify-center q-pb-lg">
+      <q-avatar size="75px" class="q-mb-lg">
+        <q-img
+          spinner-color="white"
+          spinner-size="xs"
+          :src="mintIconUrl"
+          alt="Mint Icon"
+          style="height: 75px; max-width: 75px; font-size: 12px"
+        />
+        </q-avatar>
+      </q-card-section>
       <q-card-section class="q-pt-none">
         <div class="row q-col-gutter-md q-pl-md">
           <!-- Success Rate Card -->
@@ -124,6 +135,7 @@ export default defineComponent({
     const limit = 10;
     const allLoaded = ref(false);
     const swapList = ref<HTMLElement | null>(null);
+    const mintIconUrl = ref<string | undefined>(undefined);
 
     const show = computed({
       get: () => props.modelValue,
@@ -138,6 +150,7 @@ export default defineComponent({
         allLoaded.value = false;
         // Reload data
         fetchSwaps('initial');
+        getMintIcon(props.mint);
       }
     });
 
@@ -265,8 +278,20 @@ export default defineComponent({
       return `Mint ${mintId}`;
     };
 
+    const getMintIcon = async (mint: MintRead) => {
+      try {
+        const mintInfo = await fetch(mint.url + '/v1/info');
+        const info = await mintInfo.json();
+        mintIconUrl.value = info.icon_url;
+      } catch (error) {
+        console.error('Error fetching mint icon:', error);
+        mintIconUrl.value = undefined;
+      }
+    };
+
     onMounted(() => {
       fetchSwaps('initial');
+      getMintIcon(props.mint);
     });
 
     return {
@@ -282,7 +307,8 @@ export default defineComponent({
       formatTime,
       getMintName,
       loadMoreSwaps,
-      formatDate
+      formatDate,
+      mintIconUrl
     };
   }
 });
