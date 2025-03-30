@@ -20,7 +20,7 @@
         </q-avatar>
       </q-card-section>
       <!-- mint url (centered and monospace) with copy button  -->
-      <q-card-section class="row justify-center q-pb-lg q-pt-none">
+      <q-card-section class="row justify-center q-pb-xl q-pt-none">
         <div class="text-center text-wrap" style="font-family: monospace;">{{ mint.url }}</div>
         <q-btn
           flat
