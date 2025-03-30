@@ -37,6 +37,11 @@ npm run format
 quasar build spa
 ```
 
+### Push changes
+```bash
+make frontend && make frontend-push
+```
+
 ### API URL
 Set API url in `src/services/api.ts`
 
