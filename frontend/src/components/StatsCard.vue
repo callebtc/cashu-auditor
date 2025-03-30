@@ -1,7 +1,7 @@
 <!-- src/components/StatsCard.vue -->
 
 <template>
-  <div class="q-pa-md">
+  <div class="q-px-md">
     <q-card flat class="bg-dark text-white">
       <q-separator />
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="bar-chart-container">
+  <div class="bar-chart-container" ref="chartContainer">
     <div class="chart-wrapper">
       <div class="bars-container">
         <div v-for="(bucket, index) in displayBuckets"
@@ -9,8 +9,8 @@
                'placeholder': bucket.count === 0
              }"
              :style="{
-               width: `${100 / displayBuckets.length}%`,
-               left: `${(index / displayBuckets.length) * 100}%`,
+               width: `${barWidth}px`,
+               left: `${index * (barWidth + spacing)}px`,
                backgroundColor: bucket.count > 0 ? getSuccessColor(bucket.successRate) : 'transparent'
              }"
              @mouseover="showBucketTooltip($event, bucket)"
@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, watch } from 'vue';
 import { SwapEventRead } from 'src/models/mint';
 
 interface SwapBucket {
@@ -60,6 +60,14 @@ export default defineComponent({
     maxBars: {
       type: Number,
       default: 40
+    },
+    barSpacing: {
+      type: Number,
+      default: 2
+    },
+    minBarWidth: {
+      type: Number,
+      default: 2
     }
   },
   setup(props) {
@@ -70,21 +78,58 @@ export default defineComponent({
       content: ''
     });
 
-    const screenWidth = ref(window.innerWidth);
-    const isSmallScreen = computed(() => screenWidth.value < 768);
+    const chartContainer = ref<HTMLElement | null>(null);
+    const containerWidth = ref(0);
+    const spacing = computed(() => props.barSpacing);
+    const minBarWidth = computed(() => props.minBarWidth);
 
     const barsCount = computed(() => {
-      return isSmallScreen.value ? Math.min(20, props.maxBars) : props.maxBars;
+      if (containerWidth.value <= 0) return props.maxBars;
+
+      // Calculate how many bars can fit with the given spacing
+      // Formula: (containerWidth + barSpacing) / (minBarWidth + barSpacing)
+      const maxPossibleBars = Math.floor((containerWidth.value + spacing.value) / (minBarWidth.value + spacing.value));
+
+      // Limit to maxBars prop
+      return Math.min(maxPossibleBars, props.maxBars);
     });
 
-    onMounted(() => {
-      const handleResize = () => {
-        screenWidth.value = window.innerWidth;
-      };
+    const barWidth = computed(() => {
+      if (containerWidth.value <= 0 || barsCount.value <= 0) return minBarWidth.value;
 
-      window.addEventListener('resize', handleResize);
+      // Calculate the width that would fill the container with the given number of bars and spacing
+      // Formula: (containerWidth - (barSpacing * (barsCount - 1))) / barsCount
+      return Math.max(
+        minBarWidth.value,
+        (containerWidth.value - (spacing.value * (barsCount.value - 1))) / barsCount.value
+      );
+    });
+
+    const updateContainerWidth = () => {
+      if (chartContainer.value) {
+        const barsContainer = chartContainer.value.querySelector('.bars-container');
+        if (barsContainer) {
+          containerWidth.value = barsContainer.clientWidth;
+        }
+      }
+    };
+
+    onMounted(() => {
+      updateContainerWidth();
+
+      const resizeObserver = new ResizeObserver(() => {
+        updateContainerWidth();
+      });
+
+      if (chartContainer.value) {
+        resizeObserver.observe(chartContainer.value);
+      }
+
+      window.addEventListener('resize', updateContainerWidth);
+
       return () => {
-        window.removeEventListener('resize', handleResize);
+        resizeObserver.disconnect();
+        window.removeEventListener('resize', updateContainerWidth);
       };
     });
 
@@ -306,7 +351,10 @@ export default defineComponent({
       tooltip,
       timeTicks,
       displayBuckets,
+      chartContainer,
       barsCount,
+      barWidth,
+      spacing,
       formatTime,
       formatDate,
       showBucketTooltip,
@@ -326,6 +374,7 @@ export default defineComponent({
   padding-left: 20px;
   padding-right: 20px;
   position: relative;
+  width: 100%;
 }
 
 .chart-title {
@@ -336,6 +385,7 @@ export default defineComponent({
 .chart-wrapper {
   position: relative;
   height: 65px;
+  width: 100%;
 }
 
 .bars-container {
@@ -346,15 +396,13 @@ export default defineComponent({
   border-radius: 4px;
   padding: 4px;
   position: relative;
-  gap: 1px;
+  width: 100%;
 }
 
 .bar {
   height: 100%;
   transition: height 0.3s ease;
   border-radius: 2px;
-  min-width: 2px;
-  max-width: 8px;
   position: absolute;
   top: 0;
 }
