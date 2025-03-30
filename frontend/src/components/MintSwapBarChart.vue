@@ -2,19 +2,18 @@
   <div class="bar-chart-container">
     <div class="chart-wrapper">
       <div class="bars-container">
-        <div v-for="(swap, index) in displaySwaps"
-             :key="swap?.id || `placeholder-${index}`"
+        <div v-for="(bucket, index) in displayBuckets"
+             :key="`bucket-${index}`"
              class="bar"
              :class="{
-               'success': swap?.state === 'OK',
-               'failure': swap?.state === 'ERROR',
-               'placeholder': !swap
+               'placeholder': bucket.count === 0
              }"
              :style="{
-               width: `${100 / displaySwaps.length}%`,
-               left: `${(index / displaySwaps.length) * 100}%`
+               width: `${100 / displayBuckets.length}%`,
+               left: `${(index / displayBuckets.length) * 100}%`,
+               backgroundColor: bucket.count > 0 ? getSuccessColor(bucket.successRate) : 'transparent'
              }"
-             @mouseover="swap && showTooltip($event, swap)"
+             @mouseover="showBucketTooltip($event, bucket)"
              @mouseleave="hideTooltip">
         </div>
       </div>
@@ -33,14 +32,23 @@
     <div v-if="tooltip.show"
          class="tooltip"
          :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-      {{ tooltip.content }}
+      <div v-html="tooltip.content"></div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, ref, computed, onMounted } from 'vue';
 import { SwapEventRead } from 'src/models/mint';
+
+interface SwapBucket {
+  swaps: SwapEventRead[];
+  count: number;
+  successCount: number;
+  successRate: number;
+  startTime: Date;
+  endTime: Date;
+}
 
 export default defineComponent({
   name: 'MintSwapBarChart',
@@ -48,6 +56,10 @@ export default defineComponent({
     swaps: {
       type: Array as () => SwapEventRead[],
       required: true
+    },
+    maxBars: {
+      type: Number,
+      default: 40
     }
   },
   setup(props) {
@@ -58,10 +70,28 @@ export default defineComponent({
       content: ''
     });
 
+    const screenWidth = ref(window.innerWidth);
+    const isSmallScreen = computed(() => screenWidth.value < 768);
+
+    const barsCount = computed(() => {
+      return isSmallScreen.value ? Math.min(20, props.maxBars) : props.maxBars;
+    });
+
+    onMounted(() => {
+      const handleResize = () => {
+        screenWidth.value = window.innerWidth;
+      };
+
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    });
+
     const timeTicks = computed(() => {
       if (props.swaps.length === 0) return [];
 
-      // Use the same time range logic as in displaySwaps
+      // Use the same time range logic as in displayBuckets
       const startTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
       const endTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
 
@@ -71,38 +101,109 @@ export default defineComponent({
       return Array.from({ length: 4 }, (_, i) => new Date(endTime + (interval * i)));
     });
 
-    const displaySwaps = computed(() => {
-      if (props.swaps.length === 0) return Array(40).fill(null);
-
-      // Create an array of 40 slots
-      const slots = Array(40).fill(null);
-      const endTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
-      const startTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
-      const timeRange = startTime - endTime;
-
-      if (timeRange === 0) {
-        // If all swaps happened at the same time, just place the first one
-        if (props.swaps.length > 0) {
-          slots[0] = props.swaps[0];
-        }
-        return slots;
+    const displayBuckets = computed(() => {
+      if (props.swaps.length === 0) {
+        return Array(barsCount.value).fill({
+          swaps: [],
+          count: 0,
+          successCount: 0,
+          successRate: 0,
+          startTime: new Date(),
+          endTime: new Date()
+        });
       }
 
-      // Fill in the actual swaps
-      props.swaps.forEach(swap => {
-        const swapTime = new Date(swap.created_at).getTime();
-        // Calculate index based on time position between newest and oldest
-        // Newest (latest) swaps will be on the left
-        const normalizedPosition = (swapTime - endTime) / timeRange;
-        const index = Math.floor((1 - normalizedPosition) * (slots.length - 1));
+      // Sort swaps by creation time (ascending)
+      const sortedSwaps = [...props.swaps].sort((a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
 
-        if (index >= 0 && index < slots.length) {
-          slots[index] = swap;
+      // Create buckets based on time
+      const endTime = new Date(sortedSwaps[sortedSwaps.length - 1].created_at).getTime(); // Latest swap
+      const startTime = new Date(sortedSwaps[0].created_at).getTime(); // Oldest swap
+      const timeRange = endTime - startTime;
+
+      const buckets: SwapBucket[] = Array(barsCount.value).fill(null).map(() => ({
+        swaps: [],
+        count: 0,
+        successCount: 0,
+        successRate: 0,
+        startTime: new Date(),
+        endTime: new Date()
+      }));
+
+      if (timeRange === 0) {
+        // If all swaps happened at the same time, place them in the first bucket
+        buckets[0].swaps = [...sortedSwaps];
+        buckets[0].count = sortedSwaps.length;
+        buckets[0].successCount = sortedSwaps.filter(swap => swap.state === 'OK').length;
+        buckets[0].successRate = buckets[0].count > 0 ? buckets[0].successCount / buckets[0].count : 0;
+        buckets[0].startTime = new Date(startTime);
+        buckets[0].endTime = new Date(endTime);
+        return buckets;
+      }
+
+      // Calculate bucket time ranges
+      const bucketTimeSpan = timeRange / barsCount.value;
+
+      for (let i = 0; i < barsCount.value; i++) {
+        // Reverse the order: newest (latest) on the left, oldest on the right
+        const reversedIndex = barsCount.value - 1 - i;
+        const bucketStartTime = startTime + (reversedIndex * bucketTimeSpan);
+        const bucketEndTime = startTime + ((reversedIndex + 1) * bucketTimeSpan);
+
+        buckets[i].startTime = new Date(bucketStartTime);
+        buckets[i].endTime = new Date(bucketEndTime);
+      }
+
+      // Assign swaps to buckets
+      sortedSwaps.forEach(swap => {
+        const swapTime = new Date(swap.created_at).getTime();
+
+        // Find which bucket this swap belongs to (reversing order so newest is on left)
+        const normalizedPosition = (swapTime - startTime) / timeRange; // 0 = oldest, 1 = newest
+        const reversedPosition = 1 - normalizedPosition; // 0 = newest, 1 = oldest
+        const bucketIndex = Math.min(
+          Math.floor(reversedPosition * barsCount.value),
+          barsCount.value - 1
+        );
+
+        if (bucketIndex >= 0) {
+          buckets[bucketIndex].swaps.push(swap);
+          buckets[bucketIndex].count++;
+          if (swap.state === 'OK') {
+            buckets[bucketIndex].successCount++;
+          }
         }
       });
 
-      return slots;
+      // Calculate success rates for each bucket
+      buckets.forEach(bucket => {
+        bucket.successRate = bucket.count > 0 ? bucket.successCount / bucket.count : 0;
+      });
+
+      return buckets;
     });
+
+    const getSuccessColor = (successRate: number) => {
+      // Convert success rate to a color from red (0%) to orange (50%) to green (100%)
+      if (successRate === 1) return '#4CAF50'; // Pure green for 100%
+      if (successRate === 0) return '#f44336'; // Pure red for 0%
+
+      if (successRate < 0.5) {
+        // Red to orange gradient (0% to 50%)
+        const r = 244;
+        const g = Math.floor(67 + (successRate * 2 * (165 - 67)));
+        const b = 54;
+        return `rgb(${r}, ${g}, ${b})`;
+      } else {
+        // Orange to green gradient (50% to 100%)
+        const r = Math.floor(244 - ((successRate - 0.5) * 2 * (244 - 76)));
+        const g = Math.floor(165 + ((successRate - 0.5) * 2 * (175 - 165)));
+        const b = Math.floor(54 - ((successRate - 0.5) * 2 * (54 - 50)));
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+    };
 
     const formatTime = (date: Date) => {
       // Special case for the most recent time (leftmost tick)
@@ -172,12 +273,28 @@ export default defineComponent({
       })}`;
     };
 
-    const showTooltip = (event: MouseEvent, swap: SwapEventRead) => {
+    const showBucketTooltip = (event: MouseEvent, bucket: SwapBucket) => {
+      if (bucket.count === 0) {
+        hideTooltip();
+        return;
+      }
+
+      const successRate = Math.round(bucket.successRate * 100);
+      let timeRange = '';
+
+      if (bucket.startTime && bucket.endTime) {
+        timeRange = `${formatDate(bucket.startTime.toISOString())} - ${formatDate(bucket.endTime.toISOString())}`;
+      }
+
       tooltip.value = {
         show: true,
         x: event.clientX + 10,
         y: event.clientY + 10,
-        content: `${swap.state === 'OK' ? 'Success' : 'Failed'} - ${formatDate(swap.created_at)}`
+        content: `
+          <div><b>Swaps:</b> ${bucket.count}</div>
+          <div><b>Success rate:</b> ${successRate}% (${bucket.successCount}/${bucket.count})</div>
+          <div><b>Time range:</b> ${timeRange}</div>
+        `
       };
     };
 
@@ -188,11 +305,13 @@ export default defineComponent({
     return {
       tooltip,
       timeTicks,
-      displaySwaps,
+      displayBuckets,
+      barsCount,
       formatTime,
       formatDate,
-      showTooltip,
-      hideTooltip
+      showBucketTooltip,
+      hideTooltip,
+      getSuccessColor
     };
   }
 });
@@ -236,14 +355,6 @@ export default defineComponent({
   max-width: 8px;
   position: absolute;
   top: 0;
-}
-
-.bar.success {
-  background-color: #4CAF50;
-}
-
-.bar.failure {
-  background-color: #f44336;
 }
 
 .bar:hover {
