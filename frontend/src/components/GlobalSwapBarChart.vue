@@ -2,7 +2,7 @@
   <div class="q-px-md">
     <q-card class="bg-dark text-white rounded-borders">
       <q-card-section>
-        <MintSwapBarChart :swaps="swaps" :maxBars="200" />
+        <MintSwapBarChart :swaps="swaps" />
       </q-card-section>
     </q-card>
   </div>

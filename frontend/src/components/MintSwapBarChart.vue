@@ -59,7 +59,7 @@ export default defineComponent({
     },
     minBars: {
       type: Number,
-      default: 30
+      default: 16
     },
     maxPossibleBars: {
       type: Number,
@@ -94,7 +94,7 @@ export default defineComponent({
       // Scale maxBars based on container width
       // For small screens (e.g., width < 600px), use minBars
       // For large screens, scale up to maxPossibleBars
-      const minWidth = 400; // Width for minimum bars
+      const minWidth = 200; // Width for minimum bars
       const maxWidth = 2600; // Width for maximum bars
 
       if (containerWidth.value <= minWidth) {
