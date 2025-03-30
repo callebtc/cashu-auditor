@@ -6,18 +6,24 @@ import os
 from typing import List
 
 from cashu.wallet.helpers import deserialize_token_from_string
-from cashu.core.base import Token
+from cashu.core.base import Token, TokenV4
 from fastapi import Depends, FastAPI, HTTPException, status
 from loguru import logger
 from sqlalchemy import select, desc, asc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 
+from contrib.nutshell.cashu.core.base import TokenV4Token
+
 from . import models, schemas, auditor
 from .database import engine, get_db
 from alembic import command
 from alembic.config import Config
 from .logging import configure_logger
+from .payment_request import PaymentRequest, PaymentPayload
+
+# Base URL for the HTTP endpoint in payment requests
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 app = FastAPI()
 
@@ -284,3 +290,38 @@ async def get_service_stats(db: AsyncSession = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error fetching service statistics: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@app.get("/pr", response_model=str)
+async def get_payment_request():
+    """
+    Endpoint to get a Cashu payment request for donation.
+    Returns a base64-encoded CBOR payment request as per NUT-18.
+    """
+    payment_request = PaymentRequest(
+        unit="sat",
+        description="Cashu mint auditor donation",
+        http_endpoint=f"{BASE_URL}/donate",
+    )
+    return payment_request.serialize()
+
+
+@app.post("/donate")
+async def receive_donation(payload: PaymentPayload, db: AsyncSession = Depends(get_db)):
+    """
+    Endpoint to receive a Cashu payment as per NUT-18.
+    This endpoint is called by the sender wallet to complete the donation.
+    """
+    logger.info(f"Received donation payment payload: {payload}")
+    try:
+        token = payload.to_tokenv4().serialize()
+        print(f"Received token: {token}")
+        await receive_token(token, db)
+    except Exception as e:
+        logger.error(f"Error parsing token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token format",
+        )
+
+    return {"status": "success", "message": "Donation received"}

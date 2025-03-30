@@ -16,6 +16,7 @@ bolt11 = "^2.1.0"
 alembic = "^1.13.3"
 mypy = "^1.11.2"
 cashu = {path = "contrib/nutshell"}
+cbor2 = "^5.6.5"
 
 [tool.poetry.scripts]
 auditor = "src.main:app"

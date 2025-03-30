@@ -25,6 +25,11 @@ MINIMUM_AMOUNT = 5  # satoshis
 MAXIMUM_AMOUNT = 100  # satoshis
 MAX_FEE_RESERVE_PERCENT = 2  # percent
 
+FORBIDDEN_MINT_URLS = [
+    "https://testnut.cashu.space",
+    "https://nofees.testnut.cashu.space",
+]
+
 
 class Auditor:
     wallet: Wallet
@@ -270,6 +275,8 @@ class Auditor:
         token_obj = deserialize_token_from_string(token)
         if token_obj.unit != "sat":
             raise ValueError("Only satoshi units are supported.")
+        if token_obj.mint in FORBIDDEN_MINT_URLS:
+            raise ValueError("This mint is not allowed to receive tokens.")
         self.wallet = await Wallet.with_db(token_obj.mint, ".")
         await self.wallet.load_mint()
         await self.wallet.load_proofs(reload=True)
