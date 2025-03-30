@@ -82,12 +82,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
+import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import { MintRead } from 'src/models/mint';
-import { getMints, createMint } from 'src/services/mintService';
+import { createMint } from 'src/services/mintService';
 import MintSwapStats from './MintSwapStats.vue';
 import TokenInput from './TokenInput.vue';
 import { copyToClipboard } from 'src/utils/clipboard';
+import { useMints } from 'src/composables/useMints';
 
 export default defineComponent({
   name: 'MintList',
@@ -97,12 +98,12 @@ export default defineComponent({
   },
   setup() {
     const token = ref('');
-    const mints = ref<MintRead[]>([]);
-    const loading = ref(false);
     const submittingToken = ref(false);
-    const error = ref('');
     const showSwapStats = ref(false);
     const selectedMint = ref<MintRead | null>(null);
+
+    // Use the mints composable
+    const { mints, loading, error, fetchMints } = useMints();
 
     const columns = [
       // { name: 'id', label: 'ID', field: 'id', sortable: true, align: 'left' },
@@ -121,23 +122,6 @@ export default defineComponent({
     ];
 
     let intervalId: number | undefined;
-
-    const fetchMints = async () => {
-      loading.value = true;
-      error.value = '';
-      try {
-        mints.value = await getMints(0, 0);
-        // monkeypatch version into info field
-        mints.value.forEach(mint => {
-          if (mint.info) { mint.info = getVersion(mint.info) };
-        });
-      } catch (err) {
-        error.value = 'Error fetching mints.';
-        console.error(err);
-      } finally {
-        loading.value = false;
-      }
-    };
 
     const submitToken = async () => {
       if (!token.value) return;
@@ -208,15 +192,6 @@ export default defineComponent({
       }
     };
 
-    const getVersion = (info: string) => {
-      try {
-        const parsedInfo = JSON.parse(info);
-        return parsedInfo.version;
-      } catch (err) {
-        return '';
-      }
-    };
-
     const onRowClick = (evt: any, row: MintRead) => {
       selectedMint.value = row;
       showSwapStats.value = true;
@@ -243,7 +218,6 @@ export default defineComponent({
       submitToken,
       formatDate,
       getStateIcon,
-      getVersion,
       showSwapStats,
       selectedMint,
       onRowClick,

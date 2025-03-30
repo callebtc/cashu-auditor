@@ -6,7 +6,7 @@
       <q-item-label header class="text-h6 q-mb-md">Recent Swaps</q-item-label>
 
       <div v-for="swap in swaps" :key="swap.id">
-        <q-item clickable class="q-my-md">
+        <q-item clickable class="q-my-md" @click="openMintStats(swap)">
           <q-item-section avatar>
             <q-icon
               :name="swap.state === 'OK' ? 'check_circle' : 'cancel'"
@@ -105,18 +105,30 @@
         No swaps found.
       </div>
     </q-list>
+
+    <!-- Mint Swap Stats Dialog -->
+    <MintSwapStats
+      v-if="selectedMint"
+      v-model="showSwapStats"
+      :mint="selectedMint"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
-import { SwapEventRead } from 'src/models/mint';
+import { SwapEventRead, MintRead } from 'src/models/mint';
 import { getSwaps } from 'src/services/mintService';
 import { date } from 'quasar';
 import { copyToClipboard } from 'src/utils/clipboard';
+import MintSwapStats from './MintSwapStats.vue';
+import { useMints } from 'src/composables/useMints';
 
 export default defineComponent({
   name: 'SwapList',
+  components: {
+    MintSwapStats
+  },
   setup() {
     // Reactive state variables
     const swaps = ref<SwapEventRead[]>([]);
@@ -128,11 +140,52 @@ export default defineComponent({
     const limit = 10;
     const allLoaded = ref(false);
 
+    // Variables for MintSwapStats dialog
+    const showSwapStats = ref(false);
+    const selectedMint = ref<MintRead | null>(null);
+
+    // Access the mints from the composable
+    const { mints, fetchMints, findMintByUrl } = useMints();
+
     // Set to track existing swap IDs for duplicate prevention
     const swapIds = ref<Set<number>>(new Set());
 
     // Interval ID for periodic fetch
     let intervalId: number | undefined;
+
+    /**
+     * Opens MintSwapStats dialog for the source mint of a swap
+     * @param swap - The swap to show stats for
+     */
+    const openMintStats = (swap: SwapEventRead) => {
+      // Ensure mints are loaded
+      if (mints.value.length === 0) {
+        fetchMints();
+      }
+
+      // Try to find the mint by URL
+      const mint = findMintByUrl(swap.from_url);
+
+      if (mint) {
+        // Use the full mint object with all properties
+        selectedMint.value = mint;
+      } else {
+        // Fallback to creating a basic mint object if not found
+        selectedMint.value = {
+          id: swap.from_id,
+          url: swap.from_url,
+          name: '', // Default empty name
+          balance: 0, // Default balance
+          updated_at: swap.created_at,
+          state: swap.state,
+          n_errors: 0,
+          n_mints: 0,
+          n_melts: 0
+        };
+      }
+
+      showSwapStats.value = true;
+    };
 
     /**
      * Formats a date string into a readable format.
@@ -262,6 +315,9 @@ export default defineComponent({
      * Initializes the component by fetching initial swaps and setting up the interval.
      */
     const initialize = async () => {
+      // First, ensure we have mints loaded
+      await fetchMints();
+      // Then fetch initial swaps
       await fetchSwaps('initial');
       // Set up interval to fetch new swaps every minute
       intervalId = window.setInterval(fetchNewSwaps, 60_000);
@@ -290,7 +346,11 @@ export default defineComponent({
       allLoaded,
       formatDate,
       loadMoreSwaps,
-      copyToClipboard
+      copyToClipboard,
+      // Add new properties for MintSwapStats
+      selectedMint,
+      showSwapStats,
+      openMintStats
     };
   },
 });
