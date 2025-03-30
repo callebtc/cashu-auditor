@@ -19,6 +19,20 @@
         />
         </q-avatar>
       </q-card-section>
+      <!-- mint url (centered and monospace) with copy button  -->
+      <q-card-section class="row justify-center q-pb-lg q-pt-none">
+        <div class="text-center text-wrap" style="font-family: monospace;">{{ mint.url }}</div>
+        <q-btn
+          flat
+          round
+          dense
+          size="xs"
+          class="q-ml-sm"
+          style="margin-top: 2px;"
+          icon="content_copy"
+          @click="copyToClipboard(mint.url, 'Mint URL copied to clipboard')"
+        />
+      </q-card-section>
       <!-- statistics -->
       <q-card-section class="q-py-none">
         <div class="row q-col-gutter-md q-px-md" style="flex-wrap: nowrap;">
@@ -119,7 +133,7 @@ import { defineComponent, ref, computed, onMounted, watch, nextTick } from 'vue'
 import { MintRead, SwapEventRead } from 'src/models/mint';
 import { getMintSwaps } from 'src/services/mintService';
 import MintSwapBarChart from './MintSwapBarChart.vue';
-
+import { copyToClipboard } from 'src/utils/clipboard';
 export default defineComponent({
   name: 'MintSwapStats',
   components: {
@@ -321,7 +335,8 @@ export default defineComponent({
       getMintName,
       loadMoreSwaps,
       formatDate,
-      mintIconUrl
+      mintIconUrl,
+      copyToClipboard
     };
   }
 });

@@ -15,10 +15,34 @@
           </q-item-section>
           <q-item-section>
             <q-item-label>
-              <span class="text-bold">From:</span> {{ swap.from_url }}
+              <span class="text-bold">From:</span>
+              {{ swap.from_url }}
+              <q-btn
+                flat
+                round
+                dense
+                size="xs"
+                icon="content_copy"
+                @click.stop="copyToClipboard(swap.from_url, 'Source mint URL copied to clipboard')"
+                class="copy-btn"
+              >
+                <q-tooltip>Copy URL</q-tooltip>
+              </q-btn>
             </q-item-label>
             <q-item-label>
-              <span class="text-bold">To:</span> {{ swap.to_url }}
+              <span class="text-bold">To:</span>
+              {{ swap.to_url }}
+              <q-btn
+                flat
+                round
+                dense
+                size="xs"
+                icon="content_copy"
+                @click.stop="copyToClipboard(swap.to_url, 'Destination mint URL copied to clipboard')"
+                class="copy-btn"
+              >
+                <q-tooltip>Copy URL</q-tooltip>
+              </q-btn>
             </q-item-label>
             <q-item-label>
               <span class="text-bold">Amount:</span> {{ swap.amount }} sat
@@ -85,6 +109,7 @@ import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { SwapEventRead } from 'src/models/mint';
 import { getSwaps } from 'src/services/mintService';
 import { date } from 'quasar';
+import { copyToClipboard } from 'src/utils/clipboard';
 
 export default defineComponent({
   name: 'SwapList',
@@ -148,7 +173,6 @@ export default defineComponent({
       // Return in the format: <time>, <date>
       return `${time}, ${date}`;
     };
-
 
     /**
      * Fetches swaps from the API.
@@ -262,6 +286,7 @@ export default defineComponent({
       allLoaded,
       formatDate,
       loadMoreSwaps,
+      copyToClipboard
     };
   },
 });
@@ -270,5 +295,14 @@ export default defineComponent({
 <style scoped>
 .text-bold {
   font-weight: bold;
+}
+
+.copy-btn {
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.copy-btn:hover {
+  opacity: 1;
 }
 </style>

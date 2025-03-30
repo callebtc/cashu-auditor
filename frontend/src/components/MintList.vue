@@ -30,6 +30,17 @@
       <template v-slot:body-cell-url="props">
         <td class="text-left" style="font-family: monospace;">
           {{ props.row.url }}
+          <q-btn
+            flat
+            round
+            dense
+            size="xs"
+            icon="content_copy"
+            @click.stop="copyToClipboard(props.row.url)"
+            class="copy-btn"
+          >
+            <q-tooltip>Copy URL</q-tooltip>
+          </q-btn>
         </td>
       </template>
 
@@ -76,6 +87,7 @@ import { MintRead } from 'src/models/mint';
 import { getMints, createMint } from 'src/services/mintService';
 import MintSwapStats from './MintSwapStats.vue';
 import TokenInput from './TokenInput.vue';
+import { copyToClipboard } from 'src/utils/clipboard';
 
 export default defineComponent({
   name: 'MintList',
@@ -234,7 +246,8 @@ export default defineComponent({
       getVersion,
       showSwapStats,
       selectedMint,
-      onRowClick
+      onRowClick,
+      copyToClipboard
     };
   },
 });
@@ -242,4 +255,12 @@ export default defineComponent({
 
 <style scoped>
 /* Add any component-specific styles here */
+.copy-btn {
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.copy-btn:hover {
+  opacity: 1;
+}
 </style>
