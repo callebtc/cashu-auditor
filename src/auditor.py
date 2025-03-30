@@ -24,6 +24,7 @@ BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
 MAXIMUM_AMOUNT = 100  # satoshis
 MAX_FEE_RESERVE_PERCENT = 2  # percent
+MAX_FEE_RESERVE_TOLERANCE = 10  # satoshis
 
 FORBIDDEN_MINT_URLS = [
     "https://testnut.cashu.space",
@@ -437,6 +438,7 @@ class Auditor:
 
             balance_before_melt = from_wallet.available_balance
             total_amount = melt_quote.amount + melt_quote.fee_reserve
+            amount_difference = total_amount - amount
 
             try:
                 send_proofs, _ = await from_wallet.select_to_send(
@@ -455,12 +457,12 @@ class Auditor:
             mint_worked = False
             try:
                 # if the fee reserve is more than 2% of the amount, we throw an error
-                if (
+                if amount_difference > MAX_FEE_RESERVE_TOLERANCE and (
                     melt_quote.fee_reserve > amount * MAX_FEE_RESERVE_PERCENT / 100
                     or total_amount > amount * (1 + MAX_FEE_RESERVE_PERCENT / 100)
                 ):
                     raise Exception(
-                        f"Fee reserve of {melt_quote.fee_reserve/amount*100}% is too high. Mint wants to charge {total_amount} sat for invoice of {amount} sat."
+                        f"Fee reserve of {melt_quote.fee_reserve/amount*100:.1f}% is too high. Mint wants to charge {total_amount} sat for invoice of {amount} sat."
                     )
                 time_start = time.time()
                 await from_wallet.melt(
