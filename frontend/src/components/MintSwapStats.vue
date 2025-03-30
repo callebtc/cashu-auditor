@@ -142,7 +142,7 @@ export default defineComponent({
     const loadingInitial = ref(false);
     const loadingMore = ref(false);
     const skip = ref(0);
-    const limit = 10;
+    const limit = 100;
     const allLoaded = ref(false);
     const swapList = ref<HTMLElement | null>(null);
     const mintIconUrl = ref<string | undefined>(undefined);

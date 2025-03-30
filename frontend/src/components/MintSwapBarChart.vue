@@ -1,23 +1,29 @@
 <template>
   <div class="bar-chart-container">
-    <div class="chart-title text-subtitle1 q-mb-sm">Swap Success Rate Over Time</div>
     <div class="chart-wrapper">
       <div class="bars-container">
-        <div v-for="swap in swaps"
-             :key="swap.id"
+        <div v-for="(swap, index) in displaySwaps"
+             :key="swap?.id || `placeholder-${index}`"
              class="bar"
-             :class="{ 'success': swap.state === 'OK', 'failure': swap.state === 'ERROR' }"
-             :style="{ width: `${100 / swaps.length}%` }"
-             @mouseover="showTooltip($event, swap)"
+             :class="{
+               'success': swap?.state === 'OK',
+               'failure': swap?.state === 'ERROR',
+               'placeholder': !swap
+             }"
+             :style="{
+               width: `${100 / displaySwaps.length}%`,
+               left: `${(index / displaySwaps.length) * 100}%`
+             }"
+             @mouseover="swap && showTooltip($event, swap)"
              @mouseleave="hideTooltip">
         </div>
       </div>
       <div class="time-axis">
-        <div v-for="(swap, index) in timeTicks"
+        <div v-for="(date, index) in timeTicks"
              :key="index"
              class="time-tick"
              :style="{ left: `${(index / (timeTicks.length - 1)) * 100}%` }">
-          {{ formatTime(swap) }}
+          {{ formatTime(date) }}
         </div>
       </div>
     </div>
@@ -51,18 +57,72 @@ export default defineComponent({
 
     const timeTicks = computed(() => {
       if (props.swaps.length === 0) return [];
-      const startTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime();
-      const endTime = new Date(props.swaps[0].created_at).getTime();
+
+      // Use the same time range logic as in displaySwaps
+      const startTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
+      const endTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
+
       const interval = (endTime - startTime) / 4; // 5 ticks (start, 3 middle, end)
+
+      // Generate time ticks from newest to oldest to match bar positions
       return Array.from({ length: 5 }, (_, i) => new Date(startTime + (interval * i)));
     });
 
+    const displaySwaps = computed(() => {
+      if (props.swaps.length === 0) return Array(40).fill(null);
+
+      // Create an array of 20 slots (or however many we want to show)
+      const slots = Array(40).fill(null);
+      const startTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap (the API returns in descending order)
+      const endTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
+      const timeRange = endTime - startTime;
+
+      if (timeRange === 0) {
+        // If all swaps happened at the same time, just place the first one
+        if (props.swaps.length > 0) {
+          slots[0] = props.swaps[0];
+        }
+        return slots;
+      }
+
+      // Fill in the actual swaps
+      props.swaps.forEach(swap => {
+        const swapTime = new Date(swap.created_at).getTime();
+        // Calculate index based on time position between newest and oldest
+        // We reverse the calculation to match the visual orientation (oldest on right)
+        const normalizedPosition = (swapTime - startTime) / timeRange;
+        const index = Math.floor(normalizedPosition * (slots.length - 1));
+
+        if (index >= 0 && index < slots.length) {
+          slots[index] = swap;
+        }
+      });
+
+      return slots;
+    });
+
     const formatTime = (date: Date) => {
-      return date.toLocaleTimeString(undefined, {
+      const today = new Date();
+      const isToday = date.toDateString() === today.toDateString();
+      const isYesterday = new Date(today.setDate(today.getDate() - 1)).toDateString() === date.toDateString();
+
+      let dateStr = '';
+      if (isToday) {
+        dateStr = 'Today';
+      } else if (isYesterday) {
+        dateStr = 'Yesterday';
+      } else {
+        dateStr = date.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+
+      return `${dateStr} ${date.toLocaleTimeString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
-      });
+      })}`;
     };
 
     const formatDate = (dateStr: string) => {
@@ -78,11 +138,27 @@ export default defineComponent({
         return 'Invalid Date';
       }
 
-      return dateObj.toLocaleTimeString(undefined, {
+      const today = new Date();
+      const isToday = dateObj.toDateString() === today.toDateString();
+      const isYesterday = new Date(today.setDate(today.getDate() - 1)).toDateString() === dateObj.toDateString();
+
+      let formattedDate = '';
+      if (isToday) {
+        formattedDate = 'Today';
+      } else if (isYesterday) {
+        formattedDate = 'Yesterday';
+      } else {
+        formattedDate = dateObj.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+
+      return `${formattedDate} ${dateObj.toLocaleTimeString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
-      });
+      })}`;
     };
 
     const showTooltip = (event: MouseEvent, swap: SwapEventRead) => {
@@ -101,6 +177,7 @@ export default defineComponent({
     return {
       tooltip,
       timeTicks,
+      displaySwaps,
       formatTime,
       formatDate,
       showTooltip,
@@ -115,7 +192,7 @@ export default defineComponent({
   background-color: #1e1e1e;
   border-radius: 8px;
   padding: 16px;
-  margin: 16px;
+  margin-top: 16px;
   position: relative;
 }
 
@@ -136,7 +213,8 @@ export default defineComponent({
   background-color: #2d2d2d;
   border-radius: 4px;
   padding: 4px;
-  gap: 1px;
+  position: relative;
+   gap: 1px;
 }
 
 .bar {
@@ -145,6 +223,8 @@ export default defineComponent({
   border-radius: 2px;
   min-width: 2px;
   max-width: 8px;
+  position: absolute;
+  top: 0;
 }
 
 .bar.success {
@@ -188,5 +268,14 @@ export default defineComponent({
   pointer-events: none;
   z-index: 1000;
   white-space: nowrap;
+}
+
+.bar.placeholder {
+  background-color: transparent;
+  border: 1px solid #444;
+}
+
+.bar.placeholder:hover {
+  filter: none;
 }
 </style>
