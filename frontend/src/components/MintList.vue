@@ -3,25 +3,12 @@
 <template>
   <div>
     <!-- Token Input -->
-    <div class="q-pa-md">
-      <!-- header: Donate token -->
-      <q-item-label class="text-h6 q-mb-md" color="white">Donate Ecash</q-item-label>
-      <q-input
-        filled
-        v-model="token"
-        label="Enter Token"
-        @keyup.enter="submitToken"
-      >
-        <template v-slot:append>
-          <q-btn color="primary" @click="submitToken" ><q-spinner v-if="submittingToken" size="15px" class="q-mr-sm" color="white" />Submit</q-btn>
-        </template>
-      </q-input>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error" class="text-negative q-pa-md">
-      {{ error }}
-    </div>
+    <TokenInput
+      v-model:token="token"
+      :submittingToken="submittingToken"
+      :error="error"
+      @submit="submitToken"
+    />
 
     <!-- Mints Table -->
     <q-table
@@ -88,11 +75,13 @@ import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { MintRead } from 'src/models/mint';
 import { getMints, createMint } from 'src/services/mintService';
 import MintSwapStats from './MintSwapStats.vue';
+import TokenInput from './TokenInput.vue';
 
 export default defineComponent({
   name: 'MintList',
   components: {
-    MintSwapStats
+    MintSwapStats,
+    TokenInput
   },
   setup() {
     const token = ref('');
