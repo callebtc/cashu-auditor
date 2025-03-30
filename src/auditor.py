@@ -185,7 +185,6 @@ class Auditor:
                 mint.info = json.dumps(wallet.mint_info.dict())
             except Exception as e:
                 logger.error(f"Error loading mint: {e}")
-                await self.bump_mint_errors(mint)
                 continue
         # Now update the mints in the database
         async with AsyncSession(engine) as session:
