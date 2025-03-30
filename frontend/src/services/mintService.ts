@@ -36,3 +36,8 @@ export const getMintStats = async (): Promise<MintStats> => {
   console.log('API Response:', response.data);
   return response.data;
 }
+
+export async function getMintSwaps(mintId: number, skip = 0, limit = 10): Promise<SwapEventRead[]> {
+  const response = await api.get(`/swaps/mint/${mintId}?skip=${skip}&limit=${limit}`);
+  return response.data;
+}

@@ -34,8 +34,13 @@ npm run format
 
 ### Build the app for production
 ```bash
-quasar build
+quasar build spa
 ```
+
+### API URL
+Set API url in `src/services/api.ts`
 
 ### Customize the configuration
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
+
+

@@ -170,6 +170,24 @@ async def read_swaps(
     return swaps
 
 
+@app.get("/swaps/mint/{mint_id}", response_model=List[schemas.SwapEventRead])
+async def read_swaps_mint(
+    mint_id: int, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)
+):
+    """
+    Endpoint to retrieve a list of Swaps for a specific Mint.
+    Supports pagination with `skip` and `limit` query parameters.
+    """
+    result = await db.execute(
+        select(models.SwapEvent)
+        .where(models.SwapEvent.from_id == mint_id)
+        .offset(skip)
+        .limit(limit)
+    )
+    swaps = result.scalars().all()
+    return swaps
+
+
 @app.get("/graph/", response_model=schemas.MintGraph)
 async def read_mint_graph(db: AsyncSession = Depends(get_db)):
     """

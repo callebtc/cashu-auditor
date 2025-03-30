@@ -1,17 +1,26 @@
 <template>
   <q-card class="bg-dark">
-  <q-card-section class="bg-dark text-light">
-    <h2 class="text-h6">Mint Graph</h2>
-  </q-card-section>
-  <div class="mint-graph-container">
-    <svg ref="svgRef"></svg>
-    <q-spinner v-if="loading" color="primary" size="50px" class="q-my-md" />
-    <div v-if="error" class="text-negative q-pa-md">
-      {{ error }}
+    <q-card-section class="bg-dark text-light">
+      <h2 class="text-h6">Mint Graph</h2>
+    </q-card-section>
+    <div class="mint-graph-container">
+      <svg ref="svgRef"></svg>
+      <div v-if="!isLoaded" class="load-button-container">
+        <q-btn
+          label="Load Graph"
+          outline
+          color="primary"
+          @click="loadGraph"
+          :loading="loading"
+        />
+      </div>
+      <q-spinner v-if="loading" color="primary" size="50px" class="q-my-md" />
+      <div v-if="error" class="text-negative q-pa-md">
+        {{ error }}
+      </div>
+      <div ref="tooltip" class="tooltip" style="opacity: 0;"></div>
     </div>
-    <div ref="tooltip" class="tooltip" style="opacity: 0;"></div>
-  </div>
-</q-card>
+  </q-card>
 </template>
 
 <script lang="ts">
@@ -38,18 +47,20 @@ export default defineComponent({
   name: 'MintGraph',
   setup() {
     const svgRef = ref<SVGSVGElement | null>(null);
-    const tooltipRef = ref<HTMLDivElement | null>(null); // Reference for the tooltip
+    const tooltipRef = ref<HTMLDivElement | null>(null);
     const mintGraph = ref<MintGraph | null>(null);
     const loading = ref(false);
     const error = ref('');
+    const isLoaded = ref(false);
     let simulation: d3.Simulation<GraphNode, GraphLink> | null = null;
 
-    const fetchMintGraph = async () => {
+    const loadGraph = async () => {
       loading.value = true;
       error.value = '';
       try {
         mintGraph.value = await getMintGraph();
         renderGraph();
+        isLoaded.value = true;
       } catch (err) {
         error.value = 'Error fetching mint graph.';
         console.error(err);
@@ -93,8 +104,25 @@ export default defineComponent({
       const svg = d3.select(svgRef.value)
         .attr('width', '100%')
         .attr('height', '100%')
-        .attr('viewBox', `-250 -200 800 550`)
+        .attr('viewBox', `0 0 ${width} ${height}`)
         .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      // Add zoom behavior
+      const zoom = d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+          container.attr('transform', event.transform);
+        });
+
+      // Create a container for all elements
+      const container = svg.append('g');
+
+      // Apply zoom behavior to SVG
+      svg.call(zoom as any);
+
+      // Adjust force simulation parameters for smaller screens
+      const forceStrength = width < 600 ? -100 : -200; // Reduce force on small screens
+      const linkDistance = width < 600 ? 150 : 250; // Reduce link distance on small screens
 
       // Define arrowhead markers
       svg.append('defs').append('marker')
@@ -114,19 +142,18 @@ export default defineComponent({
       const tooltip = d3.select(tooltipRef.value);
 
       simulation = d3.forceSimulation<GraphNode, GraphLink>(nodes)
-        // .force('link', d3.forceLink<GraphNode, GraphLink>(links).id((d) => d.id.toString()).distance(300))
           .force('link', d3.forceLink<GraphNode, GraphLink>(links)
           .id((d) => d.id.toString())
-          .distance(250)
+          .distance(linkDistance)
           .strength((d) => Math.log(d.count) / 1000)
         )
-        .force('charge', d3.forceManyBody().strength(-200))
+        .force('charge', d3.forceManyBody().strength(forceStrength))
         .force('center', d3.forceCenter(width / 2, height / 2))
         .force('x', d3.forceX(width / 2).strength(0.01))
         .force('y', d3.forceY(height / 2).strength(0.05))
         .on('tick', ticked);
 
-      const link = svg.append('g')
+      const link = container.append('g')
         .attr('class', 'links')
         .selectAll('path')
         .data(links)
@@ -151,7 +178,7 @@ export default defineComponent({
           tooltip.style('opacity', 0);
         });
 
-      const node = svg.append('g')
+      const node = container.append('g')
         .attr('class', 'nodes')
         .selectAll('circle')
         .data(nodes)
@@ -178,7 +205,7 @@ export default defineComponent({
       node.append('title')
         .text((d) => `Name: ${d.name || d.url}\nBalance: ${d.balance}`);
 
-      const label = svg.append('g')
+      const label = container.append('g')
         .attr('class', 'labels')
         .selectAll('text')
         .data(nodes)
@@ -214,6 +241,8 @@ export default defineComponent({
         if (!event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
+        // Stop zoom behavior when dragging nodes
+        event.sourceEvent.stopPropagation();
       }
 
       function dragged(event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>, d: GraphNode) {
@@ -247,27 +276,23 @@ export default defineComponent({
       }
     };
 
-    let intervalId: number | undefined;
-
     onMounted(() => {
-      fetchMintGraph();
-      // intervalId = window.setInterval(fetchMintGraph, 60_000);
+      // Remove automatic loading
     });
 
     onBeforeUnmount(() => {
       if (simulation) {
         simulation.stop();
       }
-      if (intervalId !== undefined) {
-        clearInterval(intervalId);
-      }
     });
 
     return {
       svgRef,
-      tooltipRef, // Return tooltipRef here
+      tooltipRef,
       loading,
       error,
+      isLoaded,
+      loadGraph,
       getStateColor
     };
   },
@@ -279,10 +304,42 @@ export default defineComponent({
   position: relative;
   width: 100%;
   height: 600px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Add responsive styles */
+@media (max-width: 600px) {
+  .mint-graph-container {
+    height: 400px; /* Reduce height on small screens */
+  }
+
+  .labels text {
+    font-size: 10px; /* Smaller font on small screens */
+  }
+
+  .tooltip {
+    font-size: 10px;
+    max-width: 200px; /* Prevent tooltip from overflowing */
+  }
+}
+
+.load-button-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 3rem;
+  border-radius: 8px;
+  transition: opacity 0.3s ease;
 }
 
 svg {
-  border: 1px solid #ccc;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .nodes circle {
@@ -308,6 +365,6 @@ svg {
   border-radius: 3px;
   pointer-events: none;
   font-size: 12px;
-  z-index: 10; /* Ensure tooltip is on top */
+  z-index: 10;
 }
 </style>

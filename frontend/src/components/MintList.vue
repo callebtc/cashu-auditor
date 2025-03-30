@@ -1,9 +1,6 @@
 <!-- src/components/MintList.vue -->
 
 <template>
-
-
-
   <div>
     <!-- Token Input -->
     <div class="q-pa-md">
@@ -35,7 +32,20 @@
       :loading="loading"
       :hide-bottom="mints.length > 0"
       :rows-per-page-options="[0]"
+      @row-click="onRowClick"
     >
+      <!-- Add subtitle -->
+      <template v-slot:top-right>
+        <div class="text-caption text-grey-7">Click on a mint to get more information</div>
+      </template>
+
+      <!-- Add URL cell template for monospace font -->
+      <template v-slot:body-cell-url="props">
+        <td class="text-left" style="font-family: monospace;">
+          {{ props.row.url }}
+        </td>
+      </template>
+
       <!-- Custom Cell for Date Formatting -->
       <template v-slot:body-cell-updated_at="props">
         <td class="text-left">
@@ -63,6 +73,13 @@
         </td>
       </template>
     </q-table>
+
+    <!-- Mint Swap Stats Dialog -->
+    <MintSwapStats
+      v-if="selectedMint"
+      v-model="showSwapStats"
+      :mint="selectedMint"
+    />
   </div>
 </template>
 
@@ -70,30 +87,36 @@
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { MintRead } from 'src/models/mint';
 import { getMints, createMint } from 'src/services/mintService';
+import MintSwapStats from './MintSwapStats.vue';
 
 export default defineComponent({
   name: 'MintList',
+  components: {
+    MintSwapStats
+  },
   setup() {
     const token = ref('');
     const mints = ref<MintRead[]>([]);
     const loading = ref(false);
     const submittingToken = ref(false);
     const error = ref('');
+    const showSwapStats = ref(false);
+    const selectedMint = ref<MintRead | null>(null);
 
     const columns = [
       // { name: 'id', label: 'ID', field: 'id', sortable: true, align: 'left' },
-      { name: 'url', label: 'URL', field: 'url', sortable: true, align: 'left' },
+      { name: 'url', label: 'URL', field: 'url', sortable: true, align: 'left' as const },
       // { name: 'info', label: 'Info', field: 'info', sortable: true },
-      { name: 'name', label: 'Name', field: 'name', sortable: true, align: 'left' },
-      { name: 'version', label: 'Version', field: 'info', sortable: true, align: 'left' },
-      { name: 'balance', label: 'Balance (sat)', field: 'balance', sortable: true, align: 'left' },
-      { name: 'sum_donations', label: 'Total donated (sat)', field: 'sum_donations', sortable: true, align: 'left' },
-      { name: 'updated_at', label: 'Updated At', field: 'updated_at', sortable: true, align: 'left' },
+      { name: 'name', label: 'Name', field: 'name', sortable: true, align: 'left' as const },
+      { name: 'version', label: 'Version', field: 'info', sortable: true, align: 'left' as const },
+      { name: 'balance', label: 'Balance (sat)', field: 'balance', sortable: true, align: 'left' as const },
+      { name: 'sum_donations', label: 'Total donated (sat)', field: 'sum_donations', sortable: true, align: 'left' as const },
+      { name: 'updated_at', label: 'Updated At', field: 'updated_at', sortable: true, align: 'left' as const },
       // { name: 'next_update', label: 'Next Update', field: 'next_update', sortable: true, align: 'left' },
-      { name: 'state', label: 'State', field: 'state', sortable: true, align: 'left' },
-      { name: 'n_errors', label: 'Errors', field: 'n_errors', sortable: true, align: 'left' },
-      { name: 'n_mints', label: 'Mints', field: 'n_mints', sortable: true, align: 'left' },
-      { name: 'n_melts', label: 'Melts', field: 'n_melts', sortable: true, align: 'left' },
+      { name: 'state', label: 'State', field: 'state', sortable: true, align: 'left' as const },
+      { name: 'n_errors', label: 'Errors', field: 'n_errors', sortable: true, align: 'left' as const },
+      { name: 'n_mints', label: 'Mints', field: 'n_mints', sortable: true, align: 'left' as const },
+      { name: 'n_melts', label: 'Melts', field: 'n_melts', sortable: true, align: 'left' as const },
     ];
 
     let intervalId: number | undefined;
@@ -193,6 +216,10 @@ export default defineComponent({
       }
     };
 
+    const onRowClick = (evt: any, row: MintRead) => {
+      selectedMint.value = row;
+      showSwapStats.value = true;
+    };
 
     onMounted(() => {
       fetchMints();
@@ -215,7 +242,10 @@ export default defineComponent({
       submitToken,
       formatDate,
       getStateIcon,
-      getVersion
+      getVersion,
+      showSwapStats,
+      selectedMint,
+      onRowClick
     };
   },
 });
