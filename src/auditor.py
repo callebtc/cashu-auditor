@@ -23,6 +23,7 @@ MAX_SWAP_DELAY = 15 * 60  # seconds
 BALANCE_UPDATE_DELAY = 60  # seconds
 MINIMUM_AMOUNT = 5  # satoshis
 MAXIMUM_AMOUNT = 100  # satoshis
+MAX_FEE_RESERVE_PERCENT = 2  # percent
 
 
 class Auditor:
@@ -446,6 +447,11 @@ class Auditor:
 
             mint_worked = False
             try:
+                # if the fee reserve is more than 2% of the amount, we throw an error
+                if melt_quote.fee_reserve > amount * MAX_FEE_RESERVE_PERCENT / 100:
+                    raise Exception(
+                        f"Fee reserve of {melt_quote.fee_reserve/amount*100}% is too high."
+                    )
                 time_start = time.time()
                 await from_wallet.melt(
                     send_proofs,
