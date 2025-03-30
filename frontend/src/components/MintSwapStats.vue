@@ -88,8 +88,13 @@
               <div v-if="!loadingInitial && swaps.length === 0" class="text-secondary q-pa-md text-center" style="font-size: 1.2rem;">
                 No swaps found
               </div>
+              <!-- No More Swaps Message -->
+              <div v-if="allLoaded && swaps.length > 0" class="text-secondary q-pa-md text-center" style="font-size: 1.2rem;">
+                All swaps loaded
+              </div>
               <q-item-label class="text-center">
                 <q-btn
+                  v-if="!allLoaded"
                   label="Load More Swaps"
                   outline
                   color="primary"
@@ -102,12 +107,6 @@
           </q-item>
         </q-list>
 
-
-
-        <!-- No More Swaps Message -->
-        <div v-if="allLoaded && swaps.length > 0" class="text-secondary q-pa-md">
-          All swaps loaded.
-        </div>
 
       </q-card-section>
 
