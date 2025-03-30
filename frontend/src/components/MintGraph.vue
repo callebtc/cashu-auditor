@@ -20,14 +20,22 @@
       </div>
       <div ref="tooltip" class="tooltip" style="opacity: 0;"></div>
     </div>
+
+    <!-- Mint Swap Stats Dialog -->
+    <MintSwapStats
+      v-if="selectedMint"
+      v-model="showSwapStats"
+      :mint="selectedMint"
+    />
   </q-card>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
-import { MintGraph } from 'src/models/mint';
+import { MintGraph, MintRead } from 'src/models/mint';
 import { getMintGraph } from 'src/services/mintService';
 import * as d3 from 'd3';
+import MintSwapStats from './MintSwapStats.vue';
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: number;
@@ -45,6 +53,9 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
 
 export default defineComponent({
   name: 'MintGraph',
+  components: {
+    MintSwapStats
+  },
   setup() {
     const svgRef = ref<SVGSVGElement | null>(null);
     const tooltipRef = ref<HTMLDivElement | null>(null);
@@ -52,6 +63,8 @@ export default defineComponent({
     const loading = ref(false);
     const error = ref('');
     const isLoaded = ref(false);
+    const showSwapStats = ref(false);
+    const selectedMint = ref<MintRead | null>(null);
     let simulation: d3.Simulation<GraphNode, GraphLink> | null = null;
 
     const loadGraph = async () => {
@@ -200,6 +213,24 @@ export default defineComponent({
         })
         .on('mouseout', () => {
           tooltip.style('opacity', 0);
+        })
+        // Add click handler for nodes
+        .on('click', (event, d) => {
+          selectedMint.value = {
+            id: d.id,
+            name: d.name || '',
+            url: d.url || '',
+            balance: d.balance,
+            state: d.state,
+            info: '',
+            updated_at: new Date().toISOString(),
+            next_update: new Date().toISOString(),
+            n_errors: 0,
+            n_mints: 0,
+            n_melts: 0,
+            sum_donations: 0
+          };
+          showSwapStats.value = true;
         });
 
       node.append('title')
@@ -293,7 +324,9 @@ export default defineComponent({
       error,
       isLoaded,
       loadGraph,
-      getStateColor
+      getStateColor,
+      showSwapStats,
+      selectedMint
     };
   },
 });
