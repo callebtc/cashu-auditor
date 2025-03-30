@@ -194,11 +194,13 @@ class Auditor:
             await session.commit()
 
     async def update_wallet_mint_info(self, wallet: Wallet):
+        logger.info(f"Updating mint info for {wallet.url}")
         async with AsyncSession(engine) as session:
             result = await session.execute(select(Mint).where(Mint.url == wallet.url))
             mint = result.scalars().first()
             if mint:
                 mint.info = json.dumps(wallet.mint_info.dict())
+                logger.debug(f"Updated mint info for {wallet.url}: {mint.info}")
                 await session.commit()
             else:
                 logger.error(f"Mint with URL {wallet.url} not found.")
