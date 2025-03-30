@@ -1,7 +1,7 @@
 <template>
   <q-dialog v-model="show">
     <q-card class="bg-dark q-pa-sm text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
-      <q-card-actions align="left">
+      <q-card-actions class="close-button-container">
           <q-icon name="close" class="cursor-pointer text-white" v-close-popup/>
       </q-card-actions>
       <q-card-section class="row justify-center q-pb-md">
@@ -19,8 +19,8 @@
         />
         </q-avatar>
       </q-card-section>
-      <q-card-section class="q-pt-none">
-        <div class="row q-col-gutter-md q-pl-md">
+      <q-card-section class="q-py-none">
+        <div class="row q-col-gutter-md q-px-md" style="flex-wrap: nowrap;">
           <!-- Success Rate Card -->
           <q-card class="col-6 stat-card">
             <q-card-section>
@@ -31,9 +31,8 @@
               </div>
             </q-card-section>
           </q-card>
-
           <!-- Average Time Card -->
-          <q-card class="col-6 stat-card">
+          <q-card class="col-6 stat-card q-ml-md">
             <q-card-section>
               <div class="text-subtitle1">Average Time</div>
               <div class="text-h5">{{ formatTime(averageTime) }}</div>
@@ -328,5 +327,12 @@ export default defineComponent({
 
 .scroll {
   overflow-y: auto;
+}
+
+.close-button-container {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
 }
 </style>
