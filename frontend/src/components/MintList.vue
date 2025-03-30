@@ -5,7 +5,7 @@
     <!-- Token Input -->
     <div class="q-pa-md">
       <!-- header: Donate token -->
-      <q-item-label class="text-h6 q-mb-md" color="white">Donate ecash</q-item-label>
+      <q-item-label class="text-h6 q-mb-md" color="white">Donate Ecash</q-item-label>
       <q-input
         filled
         v-model="token"

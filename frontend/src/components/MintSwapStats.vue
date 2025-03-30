@@ -292,6 +292,10 @@ export default defineComponent({
         mintIconUrl.value = undefined;
         const mintInfo = await fetch(mint.url + '/v1/info');
         const info = await mintInfo.json();
+        // if icon_url is not a valid URL, return undefined
+        if (!info.icon_url.startsWith('https://') || !info.icon_url.startsWith('http://')) {
+          return;
+        }
         mintIconUrl.value = info.icon_url;
       } catch (error) {
         console.error('Error fetching mint icon:', error);
