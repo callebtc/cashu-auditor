@@ -33,6 +33,16 @@
           @click="copyToClipboard(mint.url, 'Mint URL copied to clipboard')"
         />
       </q-card-section>
+
+      <!-- Warning Box -->
+      <q-card-section class="q-py-md">
+        <MintWarningBox
+          :mint="mint"
+          :swaps="swaps"
+          :could-fetch-info="couldFetchInfo"
+        />
+      </q-card-section>
+
       <!-- statistics -->
       <q-card-section class="q-py-none">
         <div class="row q-col-gutter-md q-px-md" style="flex-wrap: nowrap;">
@@ -133,11 +143,13 @@ import { defineComponent, ref, computed, onMounted, watch, nextTick } from 'vue'
 import { MintRead, SwapEventRead } from 'src/models/mint';
 import { getMintSwaps } from 'src/services/mintService';
 import MintSwapBarChart from './MintSwapBarChart.vue';
+import MintWarningBox from './MintWarningBox.vue';
 import { copyToClipboard } from 'src/utils/clipboard';
 export default defineComponent({
   name: 'MintSwapStats',
   components: {
-    MintSwapBarChart
+    MintSwapBarChart,
+    MintWarningBox
   },
   props: {
     modelValue: {
@@ -159,6 +171,7 @@ export default defineComponent({
     const allLoaded = ref(false);
     const swapList = ref<HTMLElement | null>(null);
     const mintIconUrl = ref<string | undefined>(undefined);
+    const couldFetchInfo = ref(true);
 
     const show = computed({
       get: () => props.modelValue,
@@ -301,11 +314,23 @@ export default defineComponent({
       return `Mint ${mintId}`;
     };
 
+    const getMintInfo = async (mint: MintRead) => {
+      try {
+        const mintInfo = await fetch(mint.url + '/v1/info');
+        const info = await mintInfo.json();
+        couldFetchInfo.value = true;
+        return info;
+      } catch (error) {
+        console.error('Error fetching mint info:', error);
+        couldFetchInfo.value = false;
+        return null;
+      }
+    };
+
     const getMintIcon = async (mint: MintRead) => {
       try {
         mintIconUrl.value = undefined;
-        const mintInfo = await fetch(mint.url + '/v1/info');
-        const info = await mintInfo.json();
+        const info = await getMintInfo(mint);
         if (!info.icon_url || (!info.icon_url.startsWith('https://') && !info.icon_url.startsWith('http://'))) {
           return;
         }
@@ -336,7 +361,8 @@ export default defineComponent({
       loadMoreSwaps,
       formatDate,
       mintIconUrl,
-      copyToClipboard
+      copyToClipboard,
+      couldFetchInfo
     };
   }
 });
