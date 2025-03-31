@@ -172,7 +172,7 @@ export default defineComponent({
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 8px;
+  padding: 16px;
   text-align: left;
   font-size: 14px;
   color: #f18408;
