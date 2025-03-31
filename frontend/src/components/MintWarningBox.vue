@@ -89,9 +89,9 @@ export default defineComponent({
 
           // Add "However, " prefix if success rate is above threshold
           if (recentSuccessRate >= props.successRateThreshold) {
-            messages.push(`${baseMessage} However, ${successMessage}. This mint seems reliable, failures might be due to the receiving mint.`);
+            messages.push(`${baseMessage} However, ${successMessage} This mint seems reliable, failures might be due to the receiving mint.`);
           } else {
-            messages.push(`${baseMessage} Only ${successMessage}. This mint might be unreliable.`);
+            messages.push(`${baseMessage} Only ${successMessage} This mint might be unreliable.`);
           }
         } else {
           messages.push(baseMessage);
