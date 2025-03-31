@@ -49,7 +49,6 @@
 
 <script lang="ts">
 import { defineComponent, ref, watch } from 'vue';
-import api from 'src/services/api';
 import QRCode from '@chenfengyuan/vue-qrcode';
 import { getPaymentRequest } from 'src/services/mintService';
 import { copyToClipboard } from 'src/utils/clipboard';

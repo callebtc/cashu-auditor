@@ -82,7 +82,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { MintRead } from 'src/models/mint';
 import { createMint } from 'src/services/mintService';
 import MintSwapStats from './MintSwapStats.vue';

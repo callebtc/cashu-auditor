@@ -23,7 +23,11 @@ from .logging import configure_logger
 from .payment_request import PaymentRequest, PaymentPayload
 
 # Base URL for the HTTP endpoint in payment requests
-BASE_URL = os.getenv("BASE_URL", "https://api.audit.8333.space")
+BASE_URL = os.getenv("BASE_URL")
+if not BASE_URL:
+    raise ValueError(
+        "BASE_URL is not set, please set it in your environment or in the .env file"
+    )
 
 app = FastAPI()
 

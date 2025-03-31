@@ -119,7 +119,6 @@
 import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { SwapEventRead, MintRead } from 'src/models/mint';
 import { getSwaps } from 'src/services/mintService';
-import { date } from 'quasar';
 import { copyToClipboard } from 'src/utils/clipboard';
 import MintSwapStats from './MintSwapStats.vue';
 import { useMints } from 'src/composables/useMints';

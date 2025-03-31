@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { defineComponent, ref, computed, onMounted } from 'vue';
 import { SwapEventRead } from 'src/models/mint';
 
 interface SwapBucket {
@@ -278,7 +278,7 @@ export default defineComponent({
       if (sortedSwaps.value.length > 0) {
         const latestSwapTime = new Date(sortedSwaps.value[sortedSwaps.value.length - 1].created_at).getTime();
         if (Math.abs(date.getTime() - latestSwapTime) < 1000) { // Within 1 second
-          return "Now";
+          return 'Now';
         }
       }
 

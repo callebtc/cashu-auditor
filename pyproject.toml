@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "auditor"
 version = "0.1.0"
-description = ""
-authors = ["callebtc <93376500+callebtc@users.noreply.github.com>"]
+description = "Cashu Round Robin Auditor"
+authors = ["callebtc <callebtc@protonmail.com>"]
 readme = "README.md"
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
