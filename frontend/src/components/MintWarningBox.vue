@@ -82,7 +82,7 @@ export default defineComponent({
 
       // Check mint state
       if (props.mint.state === 'WARN' || props.mint.state === 'ERROR') {
-        const baseMessage = 'A recent swap has failed.';
+        const baseMessage = 'The last swap attempt has failed.';
 
         if (recentSwaps.length > 0) {
           let successMessage = `${successfulRecentSwaps.length} of ${recentSwaps.length} swaps in the last ${props.recentDaysThreshold} days succeeded.`;
