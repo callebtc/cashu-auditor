@@ -109,7 +109,7 @@ export default defineComponent({
 
         // Check for low success rate
         if (recentSwaps.length > 0 && recentSuccessRate < props.successRateThreshold) {
-          warningsNeeded.push(`This success rate was only ${Math.round(recentSuccessRate)}% in the last ${props.recentDaysThreshold} days, below the recommended ${props.successRateThreshold}%.`);
+          warningsNeeded.push(`In the last ${props.recentDaysThreshold} days, this mint had a success rate of ${Math.round(recentSuccessRate)}%, below the recommended ${props.successRateThreshold}%.`);
         }
 
         // Add combined message if both issues exist
