@@ -1,54 +1,98 @@
-# Cashu Round Robin Auditor frontend
+# Cashu Round Robin Auditor – Frontend
 
-This is the frontend for the Cashu Round Robin Auditor written with Quasar and Vue-js.
+This is the frontend application for the **Cashu Round Robin Auditor**, built with [Vue.js](https://vuejs.org/) and the [Quasar Framework](https://quasar.dev/).
 
-## Setup and deployment
+---
 
-Before you can start the frontend, copy the `.env.example` file to `.env` and enter your backend's URL there so the frontend knows what to talk to. You can also create a separate file for your production environment with a `.env.production` file, which we use later for building the app for production.
+## 🚀 Getting Started
 
-The `.env` file contains:
+### 1. Configure Environment
+
+Before running the app, copy the `.env.example` file and rename it to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your backend API URL so the frontend can communicate with it:
 
 ```
 # URL to your backend API server
 VUE_BASE_URL=https://api.domain.com
 ```
 
-### Install the dependencies
+For production builds, you can create a separate `.env.production` file with the same structure.
+
+---
+
+### 2. Install Dependencies
+
+Using Yarn:
+
 ```bash
 yarn
-# or
+```
+
+Or using npm:
+
+```bash
 npm install
 ```
 
-#### Build the app for production
-Make sure you have an `.env.production` file with the necessary values like the backend's URL set.
-```bash
-quasar build -m spa --dotenv .env.production
-```
+---
 
-#### Push changes
-You can push the files `dist/spa` to your webserver now.
+### 3. Run in Development Mode
 
-## Development
+Start the app with hot-reloading, error reporting, and live updates:
 
-#### Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
 quasar dev
 ```
 
-Note that if you have an `.env` file, it will be used instead of `.env.production` here.
+> ℹ️ This uses the `.env` file by default.
 
-#### Lint the files
+---
+
+## 🏗 Build for Production
+
+Ensure your `.env.production` file is correctly set up with the backend API URL.
+
+```bash
+quasar build -m spa --dotenv .env.production
+```
+
+Once built, deploy the contents of the `dist/spa` folder to your web server:
+
+```bash
+scp -r dist/spa user@yourserver:/path/to/deploy
+```
+
+---
+
+## 🧹 Code Quality
+
+### Lint the Code
+
 ```bash
 yarn lint
 # or
 npm run lint
 ```
 
+### Format the Code
 
-#### Format the files
 ```bash
 yarn format
 # or
 npm run format
 ```
+
+---
+
+## 📁 Project Structure
+
+- `src/` – Vue components and app logic
+- `public/` – Static assets
+- `dist/spa/` – Compiled production build
+
+---
