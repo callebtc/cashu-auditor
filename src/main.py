@@ -66,7 +66,12 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Could not receive token: {e}",
+            detail=f"Error receiving token: {e}",
+        )
+    if received == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Received 0 units.",
         )
     try:
         token_obj: Token = deserialize_token_from_string(token)
@@ -97,6 +102,7 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
                 n_mints=0,
                 n_melts=0,
             )
+            logger.info(f"Added new mint: {mint.url}")
             db.add(mint)
 
         await db.commit()
