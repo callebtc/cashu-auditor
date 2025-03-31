@@ -104,7 +104,7 @@ export default defineComponent({
 
         // Check for not enough successful swaps
         if (successfulRecentSwaps.length < props.requiredSuccessfulSwaps) {
-          warningsNeeded.push(`We do not have much data on this mint yet. Only ${successfulRecentSwaps.length} successful ${successfulRecentSwaps.length === 1 ? 'swap' : 'swaps'} in ${props.recentDaysThreshold} days.`);
+          warningsNeeded.push(`We do not have much recent data on this mint. There were only ${successfulRecentSwaps.length} successful ${successfulRecentSwaps.length === 1 ? 'swap' : 'swaps'} in the last ${props.recentDaysThreshold} days.`);
         }
 
         // Check for low success rate
