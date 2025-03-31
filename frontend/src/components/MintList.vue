@@ -115,7 +115,7 @@ export default defineComponent({
       { name: 'sum_donations', label: 'Total donated (sat)', field: 'sum_donations', sortable: true, align: 'left' as const },
       { name: 'updated_at', label: 'Updated At', field: 'updated_at', sortable: true, align: 'left' as const },
       // { name: 'next_update', label: 'Next Update', field: 'next_update', sortable: true, align: 'left' },
-      { name: 'state', label: 'State', field: 'state', sortable: true, align: 'left' as const },
+      { name: 'state', label: 'Last state', field: 'state', sortable: true, align: 'left' as const },
       { name: 'n_errors', label: 'Errors', field: 'n_errors', sortable: true, align: 'left' as const },
       { name: 'n_mints', label: 'Mints', field: 'n_mints', sortable: true, align: 'left' as const },
       { name: 'n_melts', label: 'Melts', field: 'n_melts', sortable: true, align: 'left' as const },
