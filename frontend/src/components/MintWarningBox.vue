@@ -82,16 +82,16 @@ export default defineComponent({
 
       // Check mint state
       if (props.mint.state === 'WARN' || props.mint.state === 'ERROR') {
-        const baseMessage = 'This mint has recently failed to swap.';
+        const baseMessage = 'A recent swap has failed.';
 
         if (recentSwaps.length > 0) {
           let successMessage = `${successfulRecentSwaps.length} of ${recentSwaps.length} swaps in the last ${props.recentDaysThreshold} days succeeded.`;
 
           // Add "However, " prefix if success rate is above threshold
           if (recentSuccessRate >= props.successRateThreshold) {
-            messages.push(`${baseMessage} However, ${successMessage}`);
+            messages.push(`${baseMessage} However, ${successMessage}. This mint seems reliable, failures might be due to the receiving mint.`);
           } else {
-            messages.push(`${baseMessage} ${successMessage}`);
+            messages.push(`${baseMessage} Only ${successMessage}. This mint might be unreliable.`);
           }
         } else {
           messages.push(baseMessage);
