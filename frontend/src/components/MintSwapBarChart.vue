@@ -86,6 +86,9 @@ export default defineComponent({
     const containerWidth = ref(0);
     const spacing = computed(() => props.barSpacing);
     const minBarWidth = computed(() => props.minBarWidth);
+    const sortedSwaps = computed(() => [...props.swaps].sort((a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    ));
 
     // Calculate responsive maxBars based on container width
     const maxBars = computed(() => {
@@ -159,11 +162,11 @@ export default defineComponent({
     });
 
     const timeTicks = computed(() => {
-      if (props.swaps.length === 0) return [];
+      if (sortedSwaps.value.length === 0) return [];
 
       // Use the same time range logic as in displayBuckets
-      const startTime = new Date(props.swaps[0].created_at).getTime(); // Oldest swap
-      const endTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime(); // Latest swap
+      const startTime = new Date(sortedSwaps.value[0].created_at).getTime(); // Oldest swap
+      const endTime = new Date(sortedSwaps.value[sortedSwaps.value.length - 1].created_at).getTime(); // Latest swap
 
       const interval = (startTime - endTime) / 3; // 4 ticks (now, 2 middle, end)
 
@@ -172,7 +175,7 @@ export default defineComponent({
     });
 
     const displayBuckets = computed(() => {
-      if (props.swaps.length === 0) {
+      if (sortedSwaps.value.length === 0) {
         return Array(barsCount.value).fill({
           swaps: [],
           count: 0,
@@ -183,14 +186,9 @@ export default defineComponent({
         });
       }
 
-      // Sort swaps by creation time (ascending)
-      const sortedSwaps = [...props.swaps].sort((a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-
       // Create buckets based on time
-      const endTime = new Date(sortedSwaps[sortedSwaps.length - 1].created_at).getTime(); // Latest swap
-      const startTime = new Date(sortedSwaps[0].created_at).getTime(); // Oldest swap
+      const endTime = new Date(sortedSwaps.value[sortedSwaps.value.length - 1].created_at).getTime(); // Latest swap
+      const startTime = new Date(sortedSwaps.value[0].created_at).getTime(); // Oldest swap
       const timeRange = endTime - startTime;
 
       const buckets: SwapBucket[] = Array(barsCount.value).fill(null).map(() => ({
@@ -204,9 +202,9 @@ export default defineComponent({
 
       if (timeRange === 0) {
         // If all swaps happened at the same time, place them in the first bucket
-        buckets[0].swaps = [...sortedSwaps];
-        buckets[0].count = sortedSwaps.length;
-        buckets[0].successCount = sortedSwaps.filter(swap => swap.state === 'OK').length;
+        buckets[0].swaps = [...sortedSwaps.value];
+        buckets[0].count = sortedSwaps.value.length;
+        buckets[0].successCount = sortedSwaps.value.filter(swap => swap.state === 'OK').length;
         buckets[0].successRate = buckets[0].count > 0 ? buckets[0].successCount / buckets[0].count : 0;
         buckets[0].startTime = new Date(startTime);
         buckets[0].endTime = new Date(endTime);
@@ -227,7 +225,7 @@ export default defineComponent({
       }
 
       // Assign swaps to buckets
-      sortedSwaps.forEach(swap => {
+      sortedSwaps.value.forEach(swap => {
         const swapTime = new Date(swap.created_at).getTime();
 
         // Find which bucket this swap belongs to (reversing order so newest is on left)
@@ -277,8 +275,8 @@ export default defineComponent({
 
     const formatTime = (date: Date) => {
       // Special case for the most recent time (leftmost tick)
-      if (props.swaps.length > 0) {
-        const latestSwapTime = new Date(props.swaps[props.swaps.length - 1].created_at).getTime();
+      if (sortedSwaps.value.length > 0) {
+        const latestSwapTime = new Date(sortedSwaps.value[sortedSwaps.value.length - 1].created_at).getTime();
         if (Math.abs(date.getTime() - latestSwapTime) < 1000) { // Within 1 second
           return "Now";
         }

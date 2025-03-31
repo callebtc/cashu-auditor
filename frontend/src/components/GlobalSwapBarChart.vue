@@ -38,11 +38,7 @@ export default defineComponent({
       try {
         // Fetch the specified number of swaps
         const fetchedSwaps = await getSwaps(0, props.maxSwaps);
-
-        // Sort swaps by creation time (ascending) for bar chart
-        swaps.value = fetchedSwaps.sort((a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        swaps.value = fetchedSwaps;
       } catch (err) {
         error.value = 'Error fetching swaps.';
         console.error(err);
