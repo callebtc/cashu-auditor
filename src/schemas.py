@@ -2,7 +2,18 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, AnyUrl
+from pydantic import BaseModel, AnyUrl, Field
+
+
+class PaginationParams(BaseModel):
+    skip: int = Field(default=0, ge=0, description="Number of items to skip")
+    limit: int = Field(
+        default=100, ge=1, le=1000, description="Number of items to return"
+    )
+
+
+class PaymentRequestResponse(BaseModel):
+    pr: str
 
 
 class MintState(Enum):

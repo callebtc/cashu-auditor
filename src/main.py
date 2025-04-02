@@ -6,14 +6,12 @@ import os
 from typing import List
 
 from cashu.wallet.helpers import deserialize_token_from_string
-from cashu.core.base import Token, TokenV4
+from cashu.core.base import Token
 from fastapi import Depends, FastAPI, HTTPException, status
 from loguru import logger
 from sqlalchemy import select, desc, asc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
-
-from contrib.nutshell.cashu.core.base import TokenV4Token
 
 from . import models, schemas, auditor
 from .database import engine, get_db
@@ -140,17 +138,26 @@ async def create_mint(
     return new_mint
 
 
+@app.get("/mints/url", response_model=schemas.MintRead)
+async def get_mint(url: str, db: AsyncSession = Depends(get_db)):
+    """Endpoint to retrieve a Mint by its URL."""
+    result = await db.execute(select(models.Mint).where(models.Mint.url == url))
+    mint = result.scalars().first()
+    if mint is None:
+        raise HTTPException(status_code=404, detail="Mint not found")
+    return mint
+
+
 @app.get("/mints/", response_model=List[schemas.MintRead])
 async def read_mints(
-    skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)
+    params: schemas.PaginationParams = Depends(), db: AsyncSession = Depends(get_db)
 ):
     """
     Endpoint to retrieve a list of all Mints.
     Supports pagination with `skip` and `limit` query parameters.
     """
-    query = select(models.Mint).offset(skip)
-    if limit:
-        query = query.limit(limit)
+    query = select(models.Mint).offset(params.skip)
+    query = query.limit(params.limit)
     result = await db.execute(query)
     mints = result.scalars().all()
     return mints
@@ -170,7 +177,7 @@ async def read_mint(mint_id: int, db: AsyncSession = Depends(get_db)):
 
 @app.get("/swaps/", response_model=List[schemas.SwapEventRead])
 async def read_swaps(
-    skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)
+    params: schemas.PaginationParams = Depends(), db: AsyncSession = Depends(get_db)
 ):
     """
     Endpoint to retrieve a list of all Swaps.
@@ -179,8 +186,8 @@ async def read_swaps(
     result = await db.execute(
         select(models.SwapEvent)
         .order_by(desc(models.SwapEvent.created_at))
-        .offset(skip)
-        .limit(limit)
+        .offset(params.skip)
+        .limit(params.limit)
     )
     swaps = result.scalars().all()
     return swaps
@@ -302,8 +309,8 @@ async def get_service_stats(db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@app.get("/pr", response_model=str)
-async def get_payment_request():
+@app.get("/pr", response_model=schemas.PaymentRequestResponse)
+async def get_payment_request(url: str | None = None):
     """
     Endpoint to get a Cashu payment request for donation.
     Returns a base64-encoded CBOR payment request as per NUT-18.
@@ -313,7 +320,9 @@ async def get_payment_request():
         description="Cashu mint auditor donation",
         http_endpoint=f"{BASE_URL}/donate",
     )
-    return payment_request.serialize()
+    if url:
+        payment_request.mints = [url]
+    return schemas.PaymentRequestResponse(pr=payment_request.serialize())
 
 
 @app.post("/donate")
