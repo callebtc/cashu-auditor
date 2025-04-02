@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 import json
 import os
-from typing import List
+from typing import List, Optional
 
 from cashu.wallet.helpers import deserialize_token_from_string
 from cashu.core.base import Token
@@ -195,7 +195,10 @@ async def read_swaps(
 
 @app.get("/swaps/mint/{mint_id}", response_model=List[schemas.SwapEventRead])
 async def read_swaps_mint(
-    mint_id: int, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)
+    mint_id: int,
+    params: schemas.PaginationParams = Depends(),
+    received: Optional[bool] = None,
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Endpoint to retrieve a list of Swaps for a specific Mint.
@@ -203,10 +206,14 @@ async def read_swaps_mint(
     """
     result = await db.execute(
         select(models.SwapEvent)
-        .where(models.SwapEvent.from_id == mint_id)
         .order_by(desc(models.SwapEvent.created_at))
-        .offset(skip)
-        .limit(limit)
+        .offset(params.skip)
+        .limit(params.limit)
+        .where(
+            models.SwapEvent.from_id == mint_id
+            if not received
+            else models.SwapEvent.to_id == mint_id
+        )
     )
     swaps = result.scalars().all()
     return swaps

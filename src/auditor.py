@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import time
 from typing import Optional
 import random
@@ -45,6 +46,9 @@ class Auditor:
         logger.info(f"Wallet initialized. Balance: {self.wallet.available_balance}")
 
         await self.update_all_balances()
+        if os.environ.get("AUDITOR_DRY_RUN"):
+            logger.info("Dry run enabled. Not starting swap task.")
+            return
         asyncio.create_task(self.monitor_swap_task())
 
         # asyncio.create_task(self.update_balances_task())
