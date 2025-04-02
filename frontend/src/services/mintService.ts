@@ -3,7 +3,7 @@
 import api from './api';
 import { MintRead, SwapEventRead, ChargeRequest, MintGraph, MintStats } from 'src/models/mint';
 
-export const getMints = async (skip = 0, limit = 0): Promise<MintRead[]> => {
+export const getMints = async (skip = 0, limit = 100): Promise<MintRead[]> => {
   const response = await api.get<MintRead[]>('/mints/', {
     params: { skip, limit },
   });
