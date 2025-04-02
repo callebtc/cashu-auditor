@@ -1,8 +1,8 @@
 # 🌀 Cashu Round Robin Auditor
 
-_An autonomous auditor that perpetually circulates ecash donations between Cashu mints using Lightning payments. Sats go in circles—until they’re lost to fees or rugs._
+_An autonomous auditor that perpetually circulates ecash donations between Cashu mints using Lightning payments. Sats go in circles—until they’re lost to fees or rugs. If a mint fails to pay a Lightning invoice, it’s flagged with a scary red label._
 
-If a mint fails to pay a Lightning invoice, it’s flagged with a **scary red label**. This keeps the mint ecosystem honest, accountable, and just a little chaotic.
+
 
 ---
 
