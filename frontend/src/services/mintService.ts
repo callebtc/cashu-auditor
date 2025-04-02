@@ -1,7 +1,7 @@
 // src/services/mintService.ts
 
 import api from './api';
-import { MintRead, SwapEventRead, ChargeRequest, MintGraph, MintStats } from 'src/models/mint';
+import { MintRead, SwapEventRead, ChargeRequest, MintGraph, MintStats, PaymentRequestResponse } from 'src/models/mint';
 
 export const getMints = async (skip = 0, limit = 100): Promise<MintRead[]> => {
   const response = await api.get<MintRead[]>('/mints/', {
@@ -42,7 +42,7 @@ export async function getMintSwaps(mintId: number, skip = 0, limit = 10): Promis
   return response.data;
 }
 
-export async function getPaymentRequest(): Promise<string> {
-  const response = await api.get<string>('/pr');
+export async function getPaymentRequest(): Promise<PaymentRequestResponse> {
+  const response = await api.get<PaymentRequestResponse>('/pr');
   return response.data;
 }

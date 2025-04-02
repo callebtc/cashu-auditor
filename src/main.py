@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from cashu.wallet.helpers import deserialize_token_from_string
 from cashu.core.base import Token
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Query, Path
 from loguru import logger
 from sqlalchemy import select, desc, asc, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,13 @@ if not BASE_URL:
         "BASE_URL is not set, please set it in your environment or in the .env file"
     )
 
-app = FastAPI()
+app = FastAPI(
+    title="Cashu Mint Auditor API",
+    description="API for managing and monitoring Cashu mints, tracking swaps, and handling donations",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -120,7 +126,16 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
 
 
 @app.post(
-    "/mints/", response_model=schemas.MintRead, status_code=status.HTTP_201_CREATED
+    "/mints/",
+    response_model=schemas.MintRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new mint",
+    description="Creates a new mint by receiving a Cashu token. The token is validated and processed, and the mint information is stored in the database.",
+    responses={
+        201: {"description": "Mint successfully created"},
+        400: {"description": "Invalid token or received 0 units"},
+        500: {"description": "Internal server error"},
+    },
 )
 async def create_mint(
     charge_request: schemas.ChargeRequest, db: AsyncSession = Depends(get_db)
@@ -138,8 +153,20 @@ async def create_mint(
     return new_mint
 
 
-@app.get("/mints/url", response_model=schemas.MintRead)
-async def get_mint(url: str, db: AsyncSession = Depends(get_db)):
+@app.get(
+    "/mints/url",
+    response_model=schemas.MintRead,
+    summary="Get mint by URL",
+    description="Retrieves a specific mint by its URL. Returns 404 if the mint is not found.",
+    responses={
+        200: {"description": "Mint found and returned"},
+        404: {"description": "Mint not found"},
+    },
+)
+async def get_mint(
+    url: str = Query(..., description="The URL of the mint to retrieve"),
+    db: AsyncSession = Depends(get_db),
+):
     """Endpoint to retrieve a Mint by its URL."""
     result = await db.execute(select(models.Mint).where(models.Mint.url == url))
     mint = result.scalars().first()
@@ -148,7 +175,13 @@ async def get_mint(url: str, db: AsyncSession = Depends(get_db)):
     return mint
 
 
-@app.get("/mints/", response_model=List[schemas.MintRead])
+@app.get(
+    "/mints/",
+    response_model=List[schemas.MintRead],
+    summary="List all mints",
+    description="Retrieves a paginated list of all mints in the system. Use skip and limit parameters for pagination.",
+    responses={200: {"description": "List of mints retrieved successfully"}},
+)
 async def read_mints(
     params: schemas.PaginationParams = Depends(), db: AsyncSession = Depends(get_db)
 ):
@@ -163,8 +196,20 @@ async def read_mints(
     return mints
 
 
-@app.get("/mints/{mint_id}", response_model=schemas.MintRead)
-async def read_mint(mint_id: int, db: AsyncSession = Depends(get_db)):
+@app.get(
+    "/mints/{mint_id}",
+    response_model=schemas.MintRead,
+    summary="Get mint by ID",
+    description="Retrieves a specific mint by its ID. Returns 404 if the mint is not found.",
+    responses={
+        200: {"description": "Mint found and returned"},
+        404: {"description": "Mint not found"},
+    },
+)
+async def read_mint(
+    mint_id: int = Path(..., description="The ID of the mint to retrieve"),
+    db: AsyncSession = Depends(get_db),
+):
     """
     Endpoint to retrieve a single Mint by its ID.
     """
@@ -175,7 +220,13 @@ async def read_mint(mint_id: int, db: AsyncSession = Depends(get_db)):
     return mint
 
 
-@app.get("/swaps/", response_model=List[schemas.SwapEventRead])
+@app.get(
+    "/swaps/",
+    response_model=List[schemas.SwapEventRead],
+    summary="List all swaps",
+    description="Retrieves a paginated list of all swap events in the system, ordered by creation date (newest first).",
+    responses={200: {"description": "List of swaps retrieved successfully"}},
+)
 async def read_swaps(
     params: schemas.PaginationParams = Depends(), db: AsyncSession = Depends(get_db)
 ):
@@ -193,11 +244,20 @@ async def read_swaps(
     return swaps
 
 
-@app.get("/swaps/mint/{mint_id}", response_model=List[schemas.SwapEventRead])
+@app.get(
+    "/swaps/mint/{mint_id}",
+    response_model=List[schemas.SwapEventRead],
+    summary="List swaps for a specific mint",
+    description="Retrieves a paginated list of swap events for a specific mint. Can filter by whether the mint was the source or destination of the swap.",
+    responses={200: {"description": "List of swaps retrieved successfully"}},
+)
 async def read_swaps_mint(
-    mint_id: int,
+    mint_id: int = Path(..., description="The ID of the mint to filter swaps by"),
     params: schemas.PaginationParams = Depends(),
-    received: Optional[bool] = None,
+    received: Optional[bool] = Query(
+        None,
+        description="If True, shows swaps where the mint was the destination. If False, shows swaps where the mint was the source.",
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -219,7 +279,13 @@ async def read_swaps_mint(
     return swaps
 
 
-@app.get("/graph/", response_model=schemas.MintGraph)
+@app.get(
+    "/graph/",
+    response_model=schemas.MintGraph,
+    summary="Get mint graph",
+    description="Retrieves a graph representation of all mints and their relationships through swaps. Returns nodes (mints) and edges (swaps) with aggregated information.",
+    responses={200: {"description": "Graph data retrieved successfully"}},
+)
 async def read_mint_graph(db: AsyncSession = Depends(get_db)):
     """
     Endpoint to retrieve a graph of all Mints and Swaps.
@@ -257,7 +323,16 @@ async def read_mint_graph(db: AsyncSession = Depends(get_db)):
     return schemas.MintGraph(nodes=mints, edges=edges_list)
 
 
-@app.get("/stats/", response_model=schemas.MintStats)
+@app.get(
+    "/stats/",
+    response_model=schemas.MintStats,
+    summary="Get service statistics",
+    description="Retrieves comprehensive statistics about the service, including total balances, swap counts, amounts, and timing information for both all-time and last 24 hours.",
+    responses={
+        200: {"description": "Statistics retrieved successfully"},
+        500: {"description": "Internal server error"},
+    },
+)
 async def get_service_stats(db: AsyncSession = Depends(get_db)):
     """Endpoint to retrieve service statistics."""
     try:
@@ -316,8 +391,18 @@ async def get_service_stats(db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@app.get("/pr", response_model=schemas.PaymentRequestResponse)
-async def get_payment_request(url: str | None = None):
+@app.get(
+    "/pr",
+    response_model=schemas.PaymentRequestResponse,
+    summary="Get payment request",
+    description="Generates a Cashu payment request for donations. Optionally accepts a specific mint URL to restrict the payment to a particular mint.",
+    responses={200: {"description": "Payment request generated successfully"}},
+)
+async def get_payment_request(
+    url: Optional[str] = Query(
+        None, description="Optional URL of a specific mint to restrict the payment to"
+    )
+):
     """
     Endpoint to get a Cashu payment request for donation.
     Returns a base64-encoded CBOR payment request as per NUT-18.
@@ -332,7 +417,16 @@ async def get_payment_request(url: str | None = None):
     return schemas.PaymentRequestResponse(pr=payment_request.serialize())
 
 
-@app.post("/donate")
+@app.post(
+    "/donate",
+    summary="Receive donation",
+    description="Endpoint to receive a Cashu payment as per NUT-18. Processes the donation payment and updates the corresponding mint information.",
+    responses={
+        200: {"description": "Donation processed successfully"},
+        400: {"description": "Invalid token format"},
+        500: {"description": "Internal server error"},
+    },
+)
 async def receive_donation(payload: PaymentPayload, db: AsyncSession = Depends(get_db)):
     """
     Endpoint to receive a Cashu payment as per NUT-18.

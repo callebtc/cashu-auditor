@@ -108,7 +108,7 @@ export default defineComponent({
 
       try {
         const response = await getPaymentRequest();
-        paymentRequestString.value = response;
+        paymentRequestString.value = response.pr
       } catch (error) {
         console.error('Error fetching payment request:', error);
         errorMessage.value = 'Failed to generate payment request. Please try again.';

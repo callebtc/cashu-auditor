@@ -1,5 +1,9 @@
 // src/models/mint.ts
 
+export interface PaymentRequestResponse {
+  pr: string;
+}
+
 export interface MintRead {
   id: number;
   url: string;
