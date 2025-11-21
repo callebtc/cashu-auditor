@@ -72,6 +72,11 @@ async def test_read_mints_includes_location(async_client):
     assert located["latitude"] == 12.34
     assert located["longitude"] == 56.78
 
+    # Test skip
+    response = await async_client.get("/mints/?skip=2&limit=2")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
 
     # Test limit
     response = await async_client.get("/mints/?limit=1")
