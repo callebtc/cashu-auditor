@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any, Union
 import cbor2
 from pydantic import BaseModel, Field
 
-from contrib.nutshell.cashu.core.base import TokenV4, TokenV4Token, TokenV4Proof
+from cashu.core.base import TokenV4, TokenV4Token, TokenV4Proof
 
 
 class Transport(BaseModel):

@@ -8,6 +8,7 @@ from cashu.wallet.wallet import Wallet
 from cashu.wallet.crud import get_bolt11_mint_quotes, bump_secret_derivation
 from cashu.wallet.helpers import receive, deserialize_token_from_string
 from cashu.core.models import ProofState
+from cashu.core.base import Amount
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,7 +160,8 @@ class Auditor:
         for mint in mints:
             wallet = await Wallet.with_db(mint.url, ".")
             await wallet.load_proofs(reload=True)
-            mint.balance = wallet.available_balance
+            mint.balance = wallet.available_balance.amount
+            logger.info(f"Updated balance for mint {mint.url} to {mint.balance} sat.")
         # Now update the balances in the database
         async with AsyncSession(engine) as session:
             for mint in mints:
@@ -169,7 +171,7 @@ class Auditor:
     async def update_mint_balance(self, mint: Mint):
         wallet = await Wallet.with_db(mint.url, ".")
         await wallet.load_proofs(reload=True)
-        new_balance = wallet.available_balance
+        new_balance = wallet.available_balance.amount
         async with AsyncSession(engine, expire_on_commit=False) as session:
             result = await session.execute(select(Mint).where(Mint.id == mint.id))
             mint_in_session = result.scalars().first()
@@ -276,7 +278,7 @@ class Auditor:
             await asyncio.sleep(BALANCE_UPDATE_DELAY)
             await self.update_all_balances()
 
-    async def receive_token(self, token: str) -> int:
+    async def receive_token(self, token: str) -> Amount:
         token_obj = deserialize_token_from_string(token)
         if token_obj.unit != "sat":
             raise ValueError("Only satoshi units are supported.")
@@ -305,7 +307,7 @@ class Auditor:
             result = await session.execute(select(Mint).where(Mint.url == wallet.url))
             mint = result.scalars().first()
             if mint:
-                mint.balance = wallet.available_balance
+                mint.balance = wallet.available_balance.amount
                 await session.commit()
             else:
                 logger.error(f"Mint with URL {wallet.url} not found.")
@@ -440,7 +442,7 @@ class Auditor:
                 )
                 raise e
 
-            balance_before_melt = from_wallet.available_balance
+            balance_before_melt = from_wallet.available_balance.amount
             total_amount = melt_quote.amount + melt_quote.fee_reserve
             amount_difference = total_amount - amount
 
@@ -477,7 +479,7 @@ class Auditor:
                 )
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs(reload=True)
-                balance_after_melt = from_wallet.available_balance
+                balance_after_melt = from_wallet.available_balance.amount
                 logger.info(
                     f"Melt successful: time taken: {int(time_taken_ms)} ms. Amount: {melt_quote.amount} sat. Fee reserve: {melt_quote.fee_reserve} sat. Fee: {(balance_before_melt - balance_after_melt) - amount} sat."
                 )
@@ -486,7 +488,7 @@ class Auditor:
                 melt_error = sanitize_err(e)
                 time_taken_ms = (time.time() - time_start) * 1000
                 await from_wallet.load_proofs(reload=True)
-                balance_after_melt = from_wallet.available_balance
+                balance_after_melt = from_wallet.available_balance.amount
                 this_error = await self.recover_errors(from_wallet, e)
                 # still try to mint in case of any non-recoverable error
                 if not this_error:

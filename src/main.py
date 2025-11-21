@@ -70,16 +70,18 @@ async def startup():
 async def receive_token(token: str, db: AsyncSession) -> models.Mint:
     try:
         received = await auditor.receive_token(token)
-        logger.success(f"Received {received} units.")
+        logger.success(f"Received {received}.")
     except Exception as e:
+        logger.error(f"Error receiving token: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error receiving token: {e}",
         )
     if received == 0:
+        logger.error(f"Received {received}.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Received 0 units.",
+            detail=f"Received {received}.",
         )
     try:
         token_obj: Token = deserialize_token_from_string(token)
@@ -88,21 +90,23 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
             select(models.Mint).where(models.Mint.url == mint_url)
         )
         mint = result.scalars().first()
-
+        logger.info(f"Mint: {mint}")
         if mint:
             # Update Existing Mint
-            mint.balance = auditor.wallet.available_balance
-            mint.sum_donations += received
+            mint.balance = auditor.wallet.available_balance.amount
+            mint.sum_donations += received.amount
             mint.next_update = datetime.utcnow() + timedelta(minutes=1)
             mint.info = json.dumps(auditor.wallet.mint_info.dict())
+            logger.info(f"Updated existing mint: {mint.url}")
+            logger.info(f"Balance: {mint.balance}, Sum donations: {mint.sum_donations}")
         else:
             # Create New Mint
             mint = models.Mint(
                 name=auditor.wallet.mint_info.name,
                 url=mint_url,
                 info=json.dumps(auditor.wallet.mint_info.dict()),
-                balance=auditor.wallet.available_balance,
-                sum_donations=auditor.wallet.available_balance,
+                balance=auditor.wallet.available_balance.amount,
+                sum_donations=auditor.wallet.available_balance.amount,
                 updated_at=datetime.utcnow(),
                 next_update=datetime.utcnow() + timedelta(minutes=1),
                 state=schemas.MintState.UNKNOWN.value,
