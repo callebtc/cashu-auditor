@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, func, ForeignKey
+from sqlalchemy import Column, DateTime, Integer, String, func, ForeignKey, Float
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -19,6 +19,8 @@ class Mint(Base):
     n_errors = Column(Integer)
     n_mints = Column(Integer)
     n_melts = Column(Integer)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
 
 
 class SwapEvent(Base):
