@@ -30,8 +30,8 @@
                 dense
                 size="xs"
                 icon="content_copy"
-                @click.stop="copyToClipboard(swap.from_url, 'Source mint URL copied to clipboard')"
                 class="copy-btn"
+                @click.stop="copyToClipboard(swap.from_url, 'Source mint URL copied to clipboard')"
               >
                 <q-tooltip>Copy URL</q-tooltip>
               </q-btn>
@@ -45,8 +45,8 @@
                 dense
                 size="xs"
                 icon="content_copy"
-                @click.stop="copyToClipboard(swap.to_url, 'Destination mint URL copied to clipboard')"
                 class="copy-btn"
+                @click.stop="copyToClipboard(swap.to_url, 'Destination mint URL copied to clipboard')"
               >
                 <q-tooltip>Copy URL</q-tooltip>
               </q-btn>
@@ -70,15 +70,15 @@
       </div>
 
       <div
-        class="q-pa-md flex justify-center"
         v-if="!allLoaded && !loadingMore && !loadingNewSwaps"
+        class="q-pa-md flex justify-center"
       >
         <q-btn
           label="Load More Swaps"
           outline
           color="primary"
-          @click="loadMoreSwaps"
           :disabled="loadingMore"
+          @click="loadMoreSwaps"
         />
       </div>
 
@@ -193,7 +193,7 @@ export default defineComponent({
      */
      const formatDate = (dateStr: string) => {
       // Check if the dateStr already ends with 'Z' or contains timezone info
-      const hasTimezone = /([Zz]|[+\-]\d{2}:\d{2})$/.test(dateStr);
+      const hasTimezone = /([Zz]|[+-]\d{2}:\d{2})$/.test(dateStr);
       let utcDateStr = dateStr;
 
       if (!hasTimezone) {

@@ -5,7 +5,7 @@
     <!-- Token Input -->
     <TokenInput
       v-model:token="token"
-      :submittingToken="submittingToken"
+      :submitting-token="submittingToken"
       :error="error"
       @submit="submitToken"
     />
@@ -22,12 +22,12 @@
       @row-click="onRowClick"
     >
       <!-- Add subtitle -->
-      <template v-slot:top-right>
+      <template #top-right>
         <div class="text-caption text-grey-7">Click on a mint to get more information</div>
       </template>
 
       <!-- Add URL cell template for monospace font -->
-      <template v-slot:body-cell-url="props">
+      <template #body-cell-url="props">
         <td class="text-left" style="font-family: monospace;">
           {{ props.row.url }}
           <q-btn
@@ -36,8 +36,8 @@
             dense
             size="xs"
             icon="content_copy"
-            @click.stop="copyToClipboard(props.row.url)"
             class="copy-btn"
+            @click.stop="copyToClipboard(props.row.url)"
           >
             <q-tooltip>Copy URL</q-tooltip>
           </q-btn>
@@ -45,27 +45,27 @@
       </template>
 
       <!-- Custom Cell for Date Formatting -->
-      <template v-slot:body-cell-updated_at="props">
+      <template #body-cell-updated_at="props">
         <td class="text-left">
           {{ formatDate(props.row.updated_at) }}
         </td>
       </template>
-      <template v-slot:body-cell-next_update="props">
+      <template #body-cell-next_update="props">
         <td class="text-left">
           {{ formatDate(props.row.next_update) }}
         </td>
       </template>
-      <template v-slot:body-cell-state="props">
+      <template #body-cell-state="props">
         <td class="text-left">
           <q-icon :name="getStateIcon(props.row.state).name" :color="getStateIcon(props.row.state).color" />
         </td>
       </template>
-      <template v-slot:body-cell-n_errors="props">
+      <template #body-cell-n_errors="props">
         <td class="text-left">
           <q-badge :color="props.row.n_errors > 0 && props.row.state == 'ERROR'? 'negative' : 'grey-7'" >{{ props.row.n_errors }}</q-badge>
         </td>
       </template>
-      <template v-slot:body-cell-n_melts="props">
+      <template #body-cell-n_melts="props">
         <td class="text-left">
           <q-badge :color="props.row.n_melts > 0 && props.row.state == 'OK' ? 'positive' : 'grey-7'" text-color="dark">{{ props.row.n_melts }}</q-badge>
         </td>
@@ -141,7 +141,7 @@ export default defineComponent({
 
     const formatDate = (dateStr: string) => {
       // Check if the dateStr already ends with 'Z' or contains timezone info
-      const hasTimezone = /([Zz]|[+\-]\d{2}:\d{2})$/.test(dateStr);
+      const hasTimezone = /([Zz]|[+-]\d{2}:\d{2})$/.test(dateStr);
       let utcDateStr = dateStr;
 
       if (!hasTimezone) {
@@ -192,7 +192,7 @@ export default defineComponent({
       }
     };
 
-    const onRowClick = (evt: any, row: MintRead) => {
+    const onRowClick = (evt: Event, row: MintRead) => {
       selectedMint.value = row;
       showSwapStats.value = true;
     };
