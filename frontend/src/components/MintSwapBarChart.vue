@@ -1,38 +1,51 @@
 <template>
-  <div class="bar-chart-container" ref="chartContainer">
+  <div ref="chartContainer" class="bar-chart-container">
     <div class="chart-wrapper">
       <div class="bars-container">
-        <div v-for="(bucket, index) in displayBuckets"
-             :key="`bucket-${index}`"
-             class="bar"
-             :class="{
-               'placeholder': bucket.count === 0
-             }"
-             :style="{
-               width: `${barWidth}px`,
-               left: `${index * (barWidth + spacing)}px`,
-               backgroundColor: bucket.count > 0 ? getSuccessColor(bucket.successRate) : 'transparent'
-             }"
-             @mouseover="showBucketTooltip($event, bucket)"
-             @mouseleave="hideTooltip">
+        <div
+          v-for="(bucket, index) in displayBuckets"
+          :key="`bucket-${index}`"
+          class="bar"
+          :class="{
+            'placeholder': bucket.count === 0
+          }"
+          :style="{
+            width: `${barWidth}px`,
+            left: `${index * (barWidth + spacing)}px`,
+            backgroundColor: bucket.count > 0 ? getSuccessColor(bucket.successRate) : 'transparent'
+          }"
+          @mouseover="showBucketTooltip($event, bucket)"
+          @mouseleave="hideTooltip"
+        >
         </div>
       </div>
       <div class="time-axis">
-        <div v-for="(date, index) in timeTicks"
-             :key="index"
-             class="time-tick"
-             :style="{
-               left: `${(index / (timeTicks.length - 1)) * 100}%`,
-               display: index === timeTicks.length - 1 ? 'none' : 'block'
-             }">
+        <div
+          v-for="(date, index) in timeTicks"
+          :key="index"
+          class="time-tick"
+          :style="{
+            left: `${(index / (timeTicks.length - 1)) * 100}%`,
+            display: index === timeTicks.length - 1 ? 'none' : 'block'
+          }"
+        >
           {{ formatTime(date) }}
         </div>
       </div>
     </div>
-    <div v-if="tooltip.show"
-         class="tooltip"
-         :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-      <div v-html="tooltip.content"></div>
+    <div
+      v-if="tooltip.show"
+      class="tooltip"
+      :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
+    >
+      <div>
+        <div><b>Swaps:</b> {{ tooltip.details.swaps }}</div>
+        <div>
+          <b>Success rate:</b>
+          {{ tooltip.details.successRate }}% ({{ tooltip.details.successCount }}/{{ tooltip.details.swaps }})
+        </div>
+        <div><b>Time range:</b> {{ tooltip.details.timeRange }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -48,6 +61,20 @@ interface SwapBucket {
   successRate: number;
   startTime: Date;
   endTime: Date;
+}
+
+interface TooltipDetails {
+  swaps: number;
+  successRate: number;
+  successCount: number;
+  timeRange: string;
+}
+
+interface TooltipState {
+  show: boolean;
+  x: number;
+  y: number;
+  details: TooltipDetails;
 }
 
 export default defineComponent({
@@ -75,11 +102,16 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const tooltip = ref({
+    const tooltip = ref<TooltipState>({
       show: false,
       x: 0,
       y: 0,
-      content: ''
+      details: {
+        swaps: 0,
+        successRate: 0,
+        successCount: 0,
+        timeRange: ''
+      }
     });
 
     const chartContainer = ref<HTMLElement | null>(null);
@@ -306,7 +338,7 @@ export default defineComponent({
     };
 
     const formatDate = (dateStr: string) => {
-      const hasTimezone = /([Zz]|[+\-]\d{2}:\d{2})$/.test(dateStr);
+      const hasTimezone = /([Zz]|[+-]\d{2}:\d{2})$/.test(dateStr);
       let utcDateStr = dateStr;
 
       if (!hasTimezone) {
@@ -358,11 +390,12 @@ export default defineComponent({
         show: true,
         x: event.clientX + 10,
         y: event.clientY + 10,
-        content: `
-          <div><b>Swaps:</b> ${bucket.count}</div>
-          <div><b>Success rate:</b> ${successRate}% (${bucket.successCount}/${bucket.count})</div>
-          <div><b>Time range:</b> ${timeRange}</div>
-        `
+        details: {
+          swaps: bucket.count,
+          successRate,
+          successCount: bucket.successCount,
+          timeRange
+        }
       };
     };
 

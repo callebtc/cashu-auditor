@@ -6,20 +6,27 @@
       <!-- header: Donate token -->
       <q-item-label class="text-h6 q-mb-md" color="white">Donate Ecash</q-item-label>
       <q-input
-        filled
         v-model="tokenValue"
+        filled
         label="Enter Token"
-        @keyup.enter="handleSubmit"
         class="rounded-borders"
+        @keyup.enter="handleSubmit"
       >
-        <template v-slot:append>
+        <template #append>
           <q-btn color="primary" @click="handleSubmit">
             <q-spinner v-if="submitting" size="15px" class="q-mr-sm" color="white" />Submit
           </q-btn>
         </template>
       </q-input>
       <div class="q-mt-md row justify-end">
-        <q-btn color="primary" v-if="!paymentRequestString" @click="createPaymentRequest" :loading="loadingPaymentRequest">Payment Request</q-btn>
+        <q-btn
+          v-if="!paymentRequestString"
+          color="primary"
+          :loading="loadingPaymentRequest"
+          @click="createPaymentRequest"
+        >
+          Payment Request
+        </q-btn>
       </div>
     </div>
 
@@ -34,12 +41,17 @@
         <qrcode :value="paymentRequestString" :options="{ width: 200 }" class="q-mb-md"></qrcode>
       </div>
       <div class="row text-center items-center justify-center">
-          <q-input v-model="paymentRequestString" class="q-mb-md" style="font-family: monospace; font-size: 12px; max-width: 400px;" readonly >
-            <template v-slot:append>
-              <q-icon name="content_copy" color="grey" size="xs" @click="copyToClipboard(paymentRequestString)"></q-icon>
-            </template>
-          </q-input>
-        </div>
+        <q-input
+          v-model="paymentRequestString"
+          class="q-mb-md"
+          style="font-family: monospace; font-size: 12px; max-width: 400px;"
+          readonly
+        >
+          <template #append>
+            <q-icon name="content_copy" color="grey" size="xs" @click="copyToClipboard(paymentRequestString)"></q-icon>
+          </template>
+        </q-input>
+      </div>
         <div class="row text-center items-center justify-center q-mb-md">
           <q-btn color="primary" outline @click="hidePaymentRequest">Hide</q-btn>
         </div>

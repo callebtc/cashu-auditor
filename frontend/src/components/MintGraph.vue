@@ -10,8 +10,8 @@
           label="Load Graph"
           outline
           color="primary"
-          @click="loadGraph"
           :loading="loading"
+          @click="loadGraph"
         />
       </div>
       <q-spinner v-if="loading" color="primary" size="50px" class="q-my-md" />
@@ -114,7 +114,7 @@ export default defineComponent({
       const width = svgRef.value.clientWidth || 800;
       const height = svgRef.value.clientHeight || 400;
 
-      const svg = d3.select(svgRef.value)
+      const svg = d3.select<SVGSVGElement, unknown>(svgRef.value)
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${width} ${height}`)
@@ -131,7 +131,7 @@ export default defineComponent({
       const container = svg.append('g');
 
       // Apply zoom behavior to SVG
-      svg.call(zoom as any);
+      svg.call(zoom);
 
       // Adjust force simulation parameters for smaller screens
       const forceStrength = width < 600 ? -100 : -200; // Reduce force on small screens
@@ -251,19 +251,23 @@ export default defineComponent({
         link.attr('d', (d) => {
           const source = d.source as GraphNode;
           const target = d.target as GraphNode;
-          const dx = target.x! - source.x!;
-          const dy = target.y! - source.y!;
+          const sourceX = source.x ?? 0;
+          const sourceY = source.y ?? 0;
+          const targetX = target.x ?? 0;
+          const targetY = target.y ?? 0;
+          const dx = targetX - sourceX;
+          const dy = targetY - sourceY;
           const dr = Math.sqrt(dx * dx + dy * dy);
-          return `M${source.x},${source.y} A${dr},${dr} 0 0,1 ${target.x},${target.y}`;
+          return `M${sourceX},${sourceY} A${dr},${dr} 0 0,1 ${targetX},${targetY}`;
         });
 
         node
-          .attr('cx', (d) => d.x!)
-          .attr('cy', (d) => d.y!);
+          .attr('cx', (d) => d.x ?? 0)
+          .attr('cy', (d) => d.y ?? 0);
 
         label
-          .attr('x', (d) => d.x!)
-          .attr('y', (d) => d.y!);
+          .attr('x', (d) => d.x ?? 0)
+          .attr('y', (d) => d.y ?? 0);
       }
     };
 

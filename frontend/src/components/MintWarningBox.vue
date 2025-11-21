@@ -1,5 +1,5 @@
 <template>
-  <div class="warning-container" v-if="hasWarnings">
+  <div v-if="hasWarnings" class="warning-container">
     <div class="warning-content">
       <q-icon name="warning" size="24px" class="warning-icon" />
       <div class="warning-text-container">

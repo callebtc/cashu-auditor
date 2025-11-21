@@ -2,7 +2,7 @@
   <q-dialog v-model="show" :maximized="$q.screen.lt.md" transition-show="fade" transition-hide="fade">
     <q-card class="bg-dark q-pa-sm text-white rounded-borders" :style="$q.screen.gt.sm ? { 'min-width': '600px' } : null">
       <q-card-actions class="close-button-container">
-          <q-icon name="close" class="cursor-pointer text-white" v-close-popup/>
+          <q-icon v-close-popup name="close" class="cursor-pointer text-white"/>
       </q-card-actions>
       <q-card-section class="row justify-center text-center q-px-xl" :class="mintIconUrl ? 'q-pb-md' : 'q-pb-md'">
         <div class="text-h4 text-wrap">{{ mint.name || mint.url }}</div>
@@ -77,7 +77,13 @@
       <!-- recent swaps -->
       <q-card-section>
         <div class="text-h6 q-mb-md">Recent Swaps</div>
-        <q-list bordered separator class="scroll" style="max-height: 400px" ref="swapList">
+        <q-list
+          ref="swapList"
+          bordered
+          separator
+          class="scroll"
+          style="max-height: 400px"
+        >
           <q-item v-for="swap in swaps" :key="swap.id" class="q-py-md">
             <q-item-section>
               <q-item-label>
@@ -122,9 +128,9 @@
                   label="Load More Swaps"
                   outline
                   color="primary"
-                  @click="loadMoreSwaps"
                   :disabled="loadingMore"
                   :loading="loadingMore"
+                  @click="loadMoreSwaps"
                 />
               </q-item-label>
             </q-item-section>
@@ -272,7 +278,7 @@ export default defineComponent({
      */
      const formatDate = (dateStr: string) => {
       // Check if the dateStr already ends with 'Z' or contains timezone info
-      const hasTimezone = /([Zz]|[+\-]\d{2}:\d{2})$/.test(dateStr);
+      const hasTimezone = /([Zz]|[+-]\d{2}:\d{2})$/.test(dateStr);
       let utcDateStr = dateStr;
 
       if (!hasTimezone) {

@@ -6,7 +6,7 @@
     </p>
   </div>
   <StatsCard />
-  <GlobalSwapBarChart :maxSwaps="1000" />
+  <GlobalSwapBarChart :max-swaps="1000" />
   <MintList />
   <MintGraph />
   <SwapList />
