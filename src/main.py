@@ -19,6 +19,7 @@ from alembic import command
 from alembic.config import Config
 from .logging import configure_logger
 from .payment_request import PaymentRequest, PaymentPayload
+from .mint_location_resolver import MintLocationResolver
 
 # Base URL for the HTTP endpoint in payment requests
 BASE_URL = os.getenv("BASE_URL")
@@ -44,6 +45,25 @@ app.add_middleware(
 )
 
 auditor = auditor.Auditor()
+location_resolver = MintLocationResolver()
+
+
+async def resolve_mint_location(mint: models.Mint, db: AsyncSession):
+    """Resolve and update the location of a mint."""
+    # Only resolve if resolver is ready (database loaded)
+    if not location_resolver.ip_ranges:
+        return
+    try:
+        coords = location_resolver.resolve_mint_location(mint.url)
+        if coords:
+            latitude, longitude = coords
+            mint.latitude = latitude
+            mint.longitude = longitude
+            logger.info(f"Resolved location for {mint.url}: ({latitude}, {longitude})")
+        else:
+            logger.warning(f"Could not resolve location for {mint.url}")
+    except Exception as e:
+        logger.error(f"Error resolving location for {mint.url}: {e}")
 
 
 @app.on_event("startup")
@@ -58,11 +78,35 @@ async def startup():
     command.upgrade(alembic_cfg, "head")
     os.chdir("..")
 
+    # Initialize location resolver and update database if needed
+    resolver_ready = False
+    try:
+        await location_resolver.ensure_database_updated()
+        resolver_ready = True
+        logger.info("IP location database ready")
+    except Exception as e:
+        logger.error(f"Error initializing location resolver: {e}")
+
     async with AsyncSession(bind=engine) as session:
         result = await session.execute(select(models.Mint))
         mints = result.scalars().all()
         app.state.mints_cache = {mint.id: mint for mint in mints}
     print(f"Loaded {len(app.state.mints_cache)} mints into the in-memory cache.")
+
+    # Resolve locations for all existing mints (only if resolver is ready)
+    if resolver_ready:
+        async with AsyncSession(bind=engine) as session:
+            result = await session.execute(select(models.Mint))
+            mints = result.scalars().all()
+            resolved_count = 0
+            for mint in mints:
+                # Only resolve if location is not already set
+                if mint.latitude is None or mint.longitude is None:
+                    await resolve_mint_location(mint, session)
+                    if mint.latitude is not None and mint.longitude is not None:
+                        resolved_count += 1
+            await session.commit()
+            logger.info(f"Resolved locations for {resolved_count} mints")
 
     await auditor.init_wallet()
 
@@ -99,6 +143,9 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
             mint.info = json.dumps(auditor.wallet.mint_info.dict())
             logger.info(f"Updated existing mint: {mint.url}")
             logger.info(f"Balance: {mint.balance}, Sum donations: {mint.sum_donations}")
+            # Resolve location if not already set
+            if mint.latitude is None or mint.longitude is None:
+                await resolve_mint_location(mint, db)
         else:
             # Create New Mint
             mint = models.Mint(
@@ -116,6 +163,8 @@ async def receive_token(token: str, db: AsyncSession) -> models.Mint:
             )
             logger.info(f"Added new mint: {mint.url}")
             db.add(mint)
+            # Resolve location for new mint
+            await resolve_mint_location(mint, db)
 
         await db.commit()
         await db.refresh(mint)

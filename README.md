@@ -45,9 +45,25 @@ Then, install the project:
 poetry install
 ```
 
+To install with development dependencies (required for running tests):
+
+```bash
+poetry install --with dev
+```
+
 ---
 
-### 🚀 3. Run the Backend
+### 🧪 3. Run Tests
+
+To run the test suite:
+
+```bash
+poetry run pytest
+```
+
+---
+
+### 🚀 4. Run the Backend
 
 ```bash
 poetry run uvicorn src.main:app

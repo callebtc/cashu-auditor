@@ -43,11 +43,35 @@ async def test_read_mints_pagination(async_client):
     data = response.json()
     assert len(data) == 2
 
-    # Test skip
-    response = await async_client.get("/mints/?skip=2&limit=2")
+
+@pytest.mark.asyncio
+async def test_read_mints_includes_location(async_client):
+    """Ensure API returns latitude and longitude when stored."""
+    async with AsyncSession(engine) as session:
+        mint = Mint(
+            url="https://located.example.com",
+            name="Located Mint",
+            balance=200,
+            sum_donations=200,
+            updated_at=datetime.utcnow(),
+            next_update=datetime.utcnow(),
+            state=MintState.OK.value,
+            n_errors=0,
+            n_mints=0,
+            n_melts=0,
+            latitude=12.34,
+            longitude=56.78,
+        )
+        session.add(mint)
+        await session.commit()
+
+    response = await async_client.get("/mints/")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
+    located = next(item for item in data if item["url"] == "https://located.example.com")
+    assert located["latitude"] == 12.34
+    assert located["longitude"] == 56.78
+
 
     # Test limit
     response = await async_client.get("/mints/?limit=1")

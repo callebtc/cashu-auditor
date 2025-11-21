@@ -132,7 +132,7 @@ dmypy.json
 tor.pid
 
 # Default data directory
-/data
+data
 /test_data
 
 # MacOS

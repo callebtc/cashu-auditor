@@ -40,6 +40,8 @@ class MintRead(BaseModel):
     n_errors: int
     n_mints: int
     n_melts: int
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
     class Config:
         orm_mode = True
