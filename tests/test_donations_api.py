@@ -41,9 +41,7 @@ def sample_payload():
         "mint": "https://mint.example.com",
         "unit": "sat",
         "memo": "donation",
-        "proofs": [
-            {"id": "00" * 16, "amount": 5, "secret": "sec", "C": "commitment"}
-        ],
+        "proofs": [{"id": "00" * 16, "amount": 5, "secret": "sec", "C": "commitment"}],
     }
 
 
@@ -55,9 +53,7 @@ async def test_receive_donation_success(async_client):
 
     with patch(
         "src.main.PaymentPayload.to_tokenv4", return_value=token_mock
-    ) as mocked_to_tokenv4, patch(
-        "src.main.receive_token", receive_mock
-    ):
+    ) as mocked_to_tokenv4, patch("src.main.receive_token", receive_mock):
         response = await async_client.post("/donate", json=sample_payload())
 
     assert response.status_code == 200

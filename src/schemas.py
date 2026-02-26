@@ -55,7 +55,7 @@ class SwapEventRead(BaseModel):
     amount: int
     fee: int
     created_at: datetime
-    time_taken: int
+    time_taken: float
     state: MintState
     error: Optional[str] = None
 

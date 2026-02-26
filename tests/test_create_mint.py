@@ -132,9 +132,7 @@ async def test_create_mint_updates_existing_record(async_client, monkeypatch):
     assert data["name"] == "Existing Mint"
 
     async with AsyncSession(engine) as session:
-        result = await session.execute(
-            select(Mint).where(Mint.id == existing.id)
-        )
+        result = await session.execute(select(Mint).where(Mint.id == existing.id))
         mint = result.scalars().first()
         assert mint.balance == 320
         assert mint.sum_donations == 225

@@ -84,7 +84,7 @@ async def test_read_graph_with_data(async_client):
     data = response.json()
     assert len(data["nodes"]) == 2
     assert len(data["edges"]) == 1
-    
+
     # Check edge aggregation
     edge = data["edges"][0]
     assert edge["from_id"] == mint1_id

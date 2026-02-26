@@ -1,8 +1,8 @@
 import base64
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 
 import cbor2
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from cashu.core.base import TokenV4, TokenV4Token, TokenV4Proof
 

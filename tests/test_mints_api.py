@@ -3,7 +3,6 @@
 import pytest
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from src.models import Mint
 from src.schemas import MintState
@@ -68,10 +67,11 @@ async def test_read_mints_includes_location(async_client):
     response = await async_client.get("/mints/")
     assert response.status_code == 200
     data = response.json()
-    located = next(item for item in data if item["url"] == "https://located.example.com")
+    located = next(
+        item for item in data if item["url"] == "https://located.example.com"
+    )
     assert located["latitude"] == 12.34
     assert located["longitude"] == 56.78
-
 
     # Test limit
     response = await async_client.get("/mints/?limit=1")

@@ -22,7 +22,9 @@ def temp_data_dir():
 
         # Override paths to use temp directory
         MintLocationResolver.DB_FILE = Path(tmpdir) / "dbip-city-ipv4-num.csv.gz"
-        MintLocationResolver.LAST_UPDATE_FILE = Path(tmpdir) / "last_update_data" / "dbip-city-ipv4-num.csv.gz.txt"
+        MintLocationResolver.LAST_UPDATE_FILE = (
+            Path(tmpdir) / "last_update_data" / "dbip-city-ipv4-num.csv.gz.txt"
+        )
 
         yield tmpdir
 
@@ -39,9 +41,42 @@ def sample_ip_database(temp_data_dir):
 
     # Create sample data: start_ip_num, end_ip_num, country, stateprov, city, latitude, longitude
     sample_data = [
-        ["16777216", "16777471", "US", "California", "", "Los Angeles", "", "34.0522", "-118.2437", ""],
-        ["16777472", "16777727", "US", "New York", "", "New York", "", "40.7128", "-74.0060", ""],
-        ["3232235520", "3232235775", "US", "California", "", "San Francisco", "", "37.7749", "-122.4194", ""],
+        [
+            "16777216",
+            "16777471",
+            "US",
+            "California",
+            "",
+            "Los Angeles",
+            "",
+            "34.0522",
+            "-118.2437",
+            "",
+        ],
+        [
+            "16777472",
+            "16777727",
+            "US",
+            "New York",
+            "",
+            "New York",
+            "",
+            "40.7128",
+            "-74.0060",
+            "",
+        ],
+        [
+            "3232235520",
+            "3232235775",
+            "US",
+            "California",
+            "",
+            "San Francisco",
+            "",
+            "37.7749",
+            "-122.4194",
+            "",
+        ],
     ]
 
     with gzip.open(db_file, "wt", encoding="utf-8") as f:
@@ -156,7 +191,9 @@ async def test_download_database(temp_data_dir):
     mock_response.raise_for_status = MagicMock()
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
         await resolver._download_database()
 
     assert resolver.db_file.exists()
@@ -248,7 +285,9 @@ async def test_ensure_database_updated_new_download(temp_data_dir):
     mock_response.raise_for_status = MagicMock()
 
     with patch("httpx.AsyncClient") as mock_client:
-        mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+            return_value=mock_response
+        )
         # Mock the load to avoid needing real CSV data
         with patch.object(resolver, "_load_database"):
             await resolver.ensure_database_updated()
@@ -296,8 +335,9 @@ async def test_ensure_database_download_failure_uses_existing(sample_ip_database
     with open(resolver.last_update_file, "w") as f:
         f.write(old_time.isoformat())
 
-    with patch.object(resolver, "_download_database", side_effect=Exception("network error")):
+    with patch.object(
+        resolver, "_download_database", side_effect=Exception("network error")
+    ):
         await resolver.ensure_database_updated()
 
     assert len(resolver.ip_ranges) == 3
-

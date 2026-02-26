@@ -29,4 +29,3 @@ def downgrade() -> None:
     # Remove latitude and longitude columns from mints table
     op.drop_column("mints", "longitude")
     op.drop_column("mints", "latitude")
-

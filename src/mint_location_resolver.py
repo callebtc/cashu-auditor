@@ -10,7 +10,7 @@ import csv
 import gzip
 import ipaddress
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 from urllib.parse import urlparse
@@ -126,7 +126,9 @@ class MintLocationResolver:
                             continue
                         latitude = float(latitude_str)
                         longitude = float(longitude_str)
-                        self.ip_ranges.append((start_ip_num, end_ip_num, latitude, longitude))
+                        self.ip_ranges.append(
+                            (start_ip_num, end_ip_num, latitude, longitude)
+                        )
                     except (ValueError, IndexError) as e:
                         logger.debug(f"Skipping invalid row: {row}, error: {e}")
                         continue
@@ -177,9 +179,7 @@ class MintLocationResolver:
 
             # Resolve hostname to IP (prefer IPv4)
             try:
-                addr_info = socket.getaddrinfo(
-                    hostname, None, proto=socket.IPPROTO_TCP
-                )
+                addr_info = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
             except socket.gaierror as e:
                 logger.warning(f"Could not resolve hostname {hostname}: {e}")
                 return None
@@ -207,7 +207,9 @@ class MintLocationResolver:
     def _ip_to_coordinates(self, ip: str) -> Optional[Tuple[float, float]]:
         """Resolve IP address to latitude/longitude coordinates."""
         if not self.ip_ranges:
-            logger.warning("IP ranges not loaded. Call ensure_database_updated() first.")
+            logger.warning(
+                "IP ranges not loaded. Call ensure_database_updated() first."
+            )
             return None
 
         try:
@@ -246,4 +248,3 @@ class MintLocationResolver:
         if not ip:
             return None
         return self._ip_to_coordinates(ip)
-

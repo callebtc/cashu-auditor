@@ -3,7 +3,6 @@
 import pytest
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from src.models import Mint, SwapEvent
 from src.schemas import MintState
