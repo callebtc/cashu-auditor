@@ -128,7 +128,7 @@ class Auditor:
             logger.error(f"Error checking proofs: {e}")
 
         reserved_proofs = [p for p in wallet.proofs if p.reserved]
-        await wallet.set_reserved(reserved_proofs, reserved=False)
+        await wallet.set_reserved_for_send(reserved_proofs, reserved=False)
         # Update the reserved status in wallet.proofs
         for p in wallet.proofs:
             p.reserved = False
@@ -515,7 +515,9 @@ class Auditor:
 
                     logger.info(f"Unspent proofs: {len(unspent_proofs)}")
                     logger.info(f"Spent proofs: {len(spent_proofs)}")
-                    await from_wallet.set_reserved(unspent_proofs, reserved=False)
+                    await from_wallet.set_reserved_for_send(
+                        unspent_proofs, reserved=False
+                    )
                     await from_wallet.invalidate(spent_proofs)
 
                     if this_error:

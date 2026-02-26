@@ -44,3 +44,4 @@ def test_sanitize_err_multiline_and_long():
     assert result == "First line with " + "A" * (500 - len("First line with "))
     assert len(result) == 500
 
+
