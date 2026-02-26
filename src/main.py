@@ -345,7 +345,7 @@ async def read_mint_graph(db: AsyncSession = Depends(get_db)):
     """
     result = await db.execute(select(models.Mint))
     mints = result.scalars().all()
-    mints = [schemas.MintRead.from_orm(mint) for mint in mints]
+    mints = [schemas.MintRead.model_validate(mint) for mint in mints]
     for mint in mints:
         mint.info = ""
     result = await db.execute(
@@ -454,7 +454,7 @@ async def get_service_stats(db: AsyncSession = Depends(get_db)):
 async def get_payment_request(
     url: Optional[str] = Query(
         None, description="Optional URL of a specific mint to restrict the payment to"
-    )
+    ),
 ):
     """
     Endpoint to get a Cashu payment request for donation.

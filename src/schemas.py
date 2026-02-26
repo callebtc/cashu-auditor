@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, AnyUrl, Field
+from pydantic import BaseModel, Field
 
 
 class PaginationParams(BaseModel):
@@ -29,7 +29,7 @@ class ChargeRequest(BaseModel):
 
 class MintRead(BaseModel):
     id: int
-    url: AnyUrl
+    url: str
     info: Optional[str] = None
     name: str
     balance: int
@@ -43,16 +43,15 @@ class MintRead(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class SwapEventRead(BaseModel):
     id: int
     from_id: int
     to_id: int
-    from_url: AnyUrl
-    to_url: AnyUrl
+    from_url: str
+    to_url: str
     amount: int
     fee: int
     created_at: datetime
@@ -60,8 +59,7 @@ class SwapEventRead(BaseModel):
     state: MintState
     error: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class MintGraphEdge(BaseModel):
